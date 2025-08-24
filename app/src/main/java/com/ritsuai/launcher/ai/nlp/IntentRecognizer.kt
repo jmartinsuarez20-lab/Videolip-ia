@@ -1,212 +1,178 @@
 package com.ritsuai.launcher.ai.nlp
 
 import android.content.Context
+import android.util.Log
 import java.util.Locale
 
 /**
- * Reconocedor de intenciones para el procesamiento de lenguaje natural.
- * Identifica la intención del usuario a partir de su mensaje.
+ * Reconocedor de intenciones para Ritsu.
+ * Analiza mensajes y determina la intención del usuario.
  */
 class IntentRecognizer(private val context: Context) {
 
-    // Patrones de intenciones
-    private val intentPatterns = mapOf(
-        "open_app" to listOf(
-            "abr[ei]\\s+(.+)",
-            "inicia\\s+(.+)",
-            "ejecuta\\s+(.+)",
-            "lanza\\s+(.+)"
-        ),
-        "call" to listOf(
-            "llama\\s+a\\s+(.+)",
-            "telefon[oe]a\\s+a\\s+(.+)",
-            "marca\\s+a\\s+(.+)",
-            "comunica\\s+con\\s+(.+)"
-        ),
-        "message" to listOf(
-            "envia\\s+(?:un\\s+)?mensaje\\s+a\\s+(.+)",
-            "escribe\\s+(?:un\\s+)?mensaje\\s+a\\s+(.+)",
-            "manda\\s+(?:un\\s+)?mensaje\\s+a\\s+(.+)",
-            "whatsapp\\s+a\\s+(.+)"
-        ),
-        "search" to listOf(
-            "busca\\s+(.+)",
-            "encuentra\\s+(.+)",
-            "investiga\\s+(.+)",
-            "google\\s+(.+)"
-        ),
-        "set_alarm" to listOf(
-            "(?:pon|establece|crea)\\s+(?:una\\s+)?alarma\\s+(?:para|a)\\s+(.+)",
-            "despierta(?:me)?\\s+a\\s+(.+)"
-        ),
-        "set_reminder" to listOf(
-            "(?:pon|establece|crea)\\s+(?:un\\s+)?recordatorio\\s+(?:para|de)\\s+(.+)",
-            "recuerda(?:me)?\\s+(.+)"
-        ),
-        "play_music" to listOf(
-            "(?:pon|reproduce)\\s+música",
-            "(?:pon|reproduce)\\s+(.+)",
-            "escuchar\\s+(.+)"
-        ),
-        "weather" to listOf(
-            "(?:cómo\\s+está|cuál\\s+es)\\s+el\\s+clima",
-            "(?:va\\s+a\\s+llover|temperatura)\\s+(?:en\\s+)?(.+)?"
-        ),
-        "greeting" to listOf(
-            "hola",
-            "buenos\\s+días",
-            "buenas\\s+tardes",
-            "buenas\\s+noches",
-            "qué\\s+tal",
-            "cómo\\s+estás"
-        ),
-        "farewell" to listOf(
-            "adiós",
-            "hasta\\s+luego",
-            "nos\\s+vemos",
-            "chao",
-            "bye"
-        ),
-        "thanks" to listOf(
-            "gracias",
-            "te\\s+lo\\s+agradezco",
-            "muy\\s+amable"
-        ),
-        "help" to listOf(
-            "ayuda",
-            "ayúdame",
-            "necesito\\s+ayuda",
-            "cómo\\s+(?:puedo|hago)\\s+(.+)"
-        ),
-        "preference" to listOf(
-            "me\\s+gusta\\s+(.+)",
-            "prefiero\\s+(.+)",
-            "me\\s+encanta\\s+(.+)"
-        ),
-        "opinion" to listOf(
-            "qué\\s+(?:opinas|piensas)\\s+(?:de|sobre)\\s+(.+)",
-            "cuál\\s+es\\s+tu\\s+opinión\\s+(?:de|sobre)\\s+(.+)"
-        ),
-        "joke" to listOf(
-            "cuéntame\\s+(?:un\\s+)?chiste",
-            "dime\\s+(?:un\\s+)?chiste",
-            "hazme\\s+reír"
-        ),
-        "unknown" to listOf()
-    )
+    // Tag para logs
+    private val TAG = "RitsuIntentRecognizer"
     
-    // Patrones de sentimientos
-    private val sentimentPatterns = mapOf(
-        "positive" to listOf(
-            "feliz", "contento", "alegre", "genial", "excelente", "fantástico",
-            "maravilloso", "increíble", "bueno", "bien", "me gusta", "me encanta"
+    // Patrones de intenciones en español
+    private val intentPatterns = mapOf(
+        Intent.GREETING to listOf(
+            "hola", "buenos días", "buenas tardes", "buenas noches", "qué tal", "cómo estás"
         ),
-        "negative" to listOf(
-            "triste", "enojado", "molesto", "frustrado", "terrible", "horrible",
-            "malo", "fatal", "pésimo", "odio", "detesto", "no me gusta"
+        Intent.FAREWELL to listOf(
+            "adiós", "hasta luego", "chao", "nos vemos", "hasta pronto", "bye"
         ),
-        "neutral" to listOf()
+        Intent.THANKS to listOf(
+            "gracias", "te lo agradezco", "muchas gracias", "agradecido", "thank you"
+        ),
+        Intent.HELP to listOf(
+            "ayuda", "ayúdame", "necesito ayuda", "cómo funciona", "qué puedes hacer"
+        ),
+        Intent.OPEN_APP to listOf(
+            "abre", "abrir", "inicia", "iniciar", "ejecuta", "lanza"
+        ),
+        Intent.CALL to listOf(
+            "llama", "llamar", "haz una llamada", "marca", "teléfono"
+        ),
+        Intent.MESSAGE to listOf(
+            "mensaje", "envía", "enviar", "escribe", "whatsapp", "sms", "texto"
+        ),
+        Intent.SEARCH to listOf(
+            "busca", "buscar", "encuentra", "encontrar", "google", "internet"
+        ),
+        Intent.WEATHER to listOf(
+            "clima", "tiempo", "temperatura", "lluvia", "sol", "pronóstico"
+        ),
+        Intent.MUSIC to listOf(
+            "música", "canción", "reproduce", "reproducir", "spotify", "audio"
+        ),
+        Intent.ALARM to listOf(
+            "alarma", "despertador", "recordatorio", "recuérdame", "avísame"
+        ),
+        Intent.CALENDAR to listOf(
+            "calendario", "agenda", "cita", "evento", "reunión", "programar"
+        ),
+        Intent.NOTES to listOf(
+            "nota", "notas", "apunta", "apuntar", "escribe", "recordar"
+        ),
+        Intent.CAMERA to listOf(
+            "cámara", "foto", "fotografía", "selfie", "graba", "video"
+        ),
+        Intent.NAVIGATION to listOf(
+            "navega", "navegación", "mapa", "ruta", "dirección", "cómo llegar"
+        ),
+        Intent.SETTINGS to listOf(
+            "configuración", "ajustes", "preferencias", "opciones", "configura"
+        ),
+        Intent.JOKE to listOf(
+            "chiste", "broma", "hazme reír", "cuéntame algo gracioso", "diviérteme"
+        ),
+        Intent.PERSONAL_INFO to listOf(
+            "mi nombre es", "me llamo", "tengo", "años", "vivo en", "trabajo en"
+        ),
+        Intent.RITSU_INFO to listOf(
+            "quién eres", "qué eres", "cómo te llamas", "cuál es tu nombre", "sobre ti"
+        ),
+        Intent.EMERGENCY to listOf(
+            "emergencia", "ayuda urgente", "socorro", "peligro", "accidente", "urgencia"
+        )
     )
     
     /**
-     * Reconoce la intención del usuario a partir de su mensaje
+     * Reconoce la intención de un mensaje
      *
-     * @param message Mensaje del usuario
+     * @param message Mensaje a analizar
      * @return Intención reconocida
      */
-    fun recognizeIntent(message: String): String {
-        val normalizedMessage = message.lowercase(Locale.getDefault())
+    fun recognizeIntent(message: String): Intent {
+        val lowerMessage = message.toLowerCase(Locale.getDefault())
         
-        // Buscar coincidencias con patrones de intenciones
+        // Buscar coincidencias en patrones
         for ((intent, patterns) in intentPatterns) {
-            if (intent == "unknown") continue
-            
             for (pattern in patterns) {
-                val regex = Regex(pattern, RegexOption.IGNORE_CASE)
-                if (regex.containsMatchIn(normalizedMessage)) {
+                if (lowerMessage.contains(pattern)) {
+                    Log.d(TAG, "Intención reconocida: $intent (patrón: $pattern)")
                     return intent
                 }
             }
         }
         
-        // Si no se encuentra ninguna coincidencia, devolver "unknown"
-        return "unknown"
-    }
-    
-    /**
-     * Analiza el sentimiento del mensaje del usuario
-     *
-     * @param message Mensaje del usuario
-     * @return Sentimiento detectado (positive, negative, neutral)
-     */
-    fun analyzeSentiment(message: String): String {
-        val normalizedMessage = message.lowercase(Locale.getDefault())
+        // Análisis más detallado para intenciones específicas
+        if (containsAppName(lowerMessage)) {
+            return Intent.OPEN_APP
+        }
         
-        // Contar palabras positivas y negativas
-        var positiveCount = 0
-        var negativeCount = 0
-        
-        // Buscar palabras positivas
-        for (word in sentimentPatterns["positive"] ?: emptyList()) {
-            if (normalizedMessage.contains(word)) {
-                positiveCount++
+        if (containsContactName(lowerMessage)) {
+            if (lowerMessage.contains("llama") || lowerMessage.contains("llamar")) {
+                return Intent.CALL
+            } else if (lowerMessage.contains("mensaje") || lowerMessage.contains("envía")) {
+                return Intent.MESSAGE
             }
         }
         
-        // Buscar palabras negativas
-        for (word in sentimentPatterns["negative"] ?: emptyList()) {
-            if (normalizedMessage.contains(word)) {
-                negativeCount++
-            }
-        }
-        
-        // Determinar sentimiento
-        return when {
-            positiveCount > negativeCount -> "positive"
-            negativeCount > positiveCount -> "negative"
-            else -> "neutral"
-        }
+        // Si no se reconoce ninguna intención específica, devolver UNKNOWN
+        Log.d(TAG, "Intención no reconocida: UNKNOWN")
+        return Intent.UNKNOWN
     }
     
     /**
-     * Extrae parámetros de la intención
-     *
-     * @param message Mensaje del usuario
-     * @param intent Intención reconocida
-     * @return Mapa de parámetros extraídos
+     * Verifica si un mensaje contiene un nombre de aplicación
      */
-    fun extractParameters(message: String, intent: String): Map<String, String> {
-        val params = mutableMapOf<String, String>()
-        val normalizedMessage = message.lowercase(Locale.getDefault())
+    private fun containsAppName(message: String): Boolean {
+        // En una implementación real, se verificaría contra la lista de aplicaciones instaladas
+        // Para este ejemplo, usamos una lista predefinida
+        val commonApps = listOf(
+            "whatsapp", "facebook", "instagram", "twitter", "youtube", "gmail", "maps",
+            "chrome", "spotify", "netflix", "amazon", "tiktok", "telegram"
+        )
         
-        // Buscar coincidencias con patrones de la intención
-        val patterns = intentPatterns[intent] ?: return params
-        
-        for (pattern in patterns) {
-            val regex = Regex(pattern, RegexOption.IGNORE_CASE)
-            val matchResult = regex.find(normalizedMessage)
+        return commonApps.any { app -> message.contains(app) }
+    }
+    
+    /**
+     * Verifica si un mensaje contiene un nombre de contacto
+     */
+    private fun containsContactName(message: String): Boolean {
+        // En una implementación real, se verificaría contra la lista de contactos
+        // Para este ejemplo, devolvemos false
+        return false
+    }
+    
+    /**
+     * Clase que representa una intención
+     */
+    class Intent(val name: String, val confidence: Float = 1.0f) {
+        companion object {
+            // Intenciones básicas
+            val GREETING = Intent("GREETING")
+            val FAREWELL = Intent("FAREWELL")
+            val THANKS = Intent("THANKS")
+            val HELP = Intent("HELP")
             
-            if (matchResult != null && matchResult.groupValues.size > 1) {
-                // El primer grupo capturado es el parámetro principal
-                val param = matchResult.groupValues[1].trim()
-                
-                when (intent) {
-                    "open_app" -> params["app_name"] = param
-                    "call" -> params["contact"] = param
-                    "message" -> params["contact"] = param
-                    "search" -> params["query"] = param
-                    "set_alarm" -> params["time"] = param
-                    "set_reminder" -> params["reminder"] = param
-                    "play_music" -> params["music"] = param
-                    "weather" -> params["location"] = param
-                    else -> params["param"] = param
-                }
-                
-                break
-            }
+            // Intenciones de aplicaciones
+            val OPEN_APP = Intent("OPEN_APP")
+            val CALL = Intent("CALL")
+            val MESSAGE = Intent("MESSAGE")
+            val SEARCH = Intent("SEARCH")
+            val WEATHER = Intent("WEATHER")
+            val MUSIC = Intent("MUSIC")
+            val ALARM = Intent("ALARM")
+            val CALENDAR = Intent("CALENDAR")
+            val NOTES = Intent("NOTES")
+            val CAMERA = Intent("CAMERA")
+            val NAVIGATION = Intent("NAVIGATION")
+            val SETTINGS = Intent("SETTINGS")
+            
+            // Intenciones de conversación
+            val JOKE = Intent("JOKE")
+            val PERSONAL_INFO = Intent("PERSONAL_INFO")
+            val RITSU_INFO = Intent("RITSU_INFO")
+            
+            // Intenciones especiales
+            val EMERGENCY = Intent("EMERGENCY")
+            
+            // Intención desconocida
+            val UNKNOWN = Intent("UNKNOWN", 0.5f)
         }
-        
-        return params
     }
 }
 

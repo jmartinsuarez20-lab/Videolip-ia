@@ -7,72 +7,78 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.ritsuai.launcher.database.entities.Memory
-import kotlinx.coroutines.flow.Flow
 
 /**
- * DAO para acceder a la tabla de memoria.
+ * DAO para la entidad Memory.
+ * Proporciona métodos para acceder a la memoria de Ritsu.
  */
 @Dao
 interface MemoryDao {
     
     /**
-     * Inserta un nuevo recuerdo en la base de datos
+     * Inserta una nueva memoria
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(memory: Memory): Long
     
     /**
-     * Actualiza un recuerdo existente
+     * Actualiza una memoria existente
      */
     @Update
     suspend fun update(memory: Memory)
     
     /**
-     * Elimina un recuerdo
+     * Elimina una memoria
      */
     @Delete
     suspend fun delete(memory: Memory)
     
     /**
-     * Obtiene un recuerdo por su clave
+     * Obtiene todas las memorias
      */
-    @Query("SELECT * FROM memories WHERE `key` = :key LIMIT 1")
-    suspend fun getByKey(key: String): Memory?
+    @Query("SELECT * FROM memories ORDER BY timestamp DESC")
+    suspend fun getAllMemories(): List<Memory>
     
     /**
-     * Obtiene todos los recuerdos de una categoría
+     * Obtiene memorias por clave
      */
-    @Query("SELECT * FROM memories WHERE category = :category ORDER BY importance DESC, updatedAt DESC")
-    fun getByCategory(category: String): Flow<List<Memory>>
+    @Query("SELECT * FROM memories WHERE `key` = :key ORDER BY timestamp DESC")
+    suspend fun getMemoriesByKey(key: String): List<Memory>
     
     /**
-     * Obtiene los recuerdos más importantes
+     * Obtiene la memoria más reciente por clave
      */
-    @Query("SELECT * FROM memories ORDER BY importance DESC LIMIT :limit")
-    fun getMostImportant(limit: Int): Flow<List<Memory>>
+    @Query("SELECT * FROM memories WHERE `key` = :key ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getLatestMemoryByKey(key: String): Memory?
     
     /**
-     * Obtiene los recuerdos más recientes
+     * Busca memorias por valor
      */
-    @Query("SELECT * FROM memories ORDER BY updatedAt DESC LIMIT :limit")
-    fun getMostRecent(limit: Int): Flow<List<Memory>>
+    @Query("SELECT * FROM memories WHERE value LIKE :query ORDER BY timestamp DESC")
+    suspend fun searchMemory(query: String): List<Memory>
     
     /**
-     * Obtiene los recuerdos más accedidos
+     * Obtiene memorias por fuente
      */
-    @Query("SELECT * FROM memories ORDER BY accessCount DESC LIMIT :limit")
-    fun getMostAccessed(limit: Int): Flow<List<Memory>>
+    @Query("SELECT * FROM memories WHERE source = :source ORDER BY timestamp DESC")
+    suspend fun getMemoriesBySource(source: String): List<Memory>
     
     /**
-     * Incrementa el contador de accesos de un recuerdo
+     * Elimina todas las memorias
      */
-    @Query("UPDATE memories SET accessCount = accessCount + 1 WHERE `key` = :key")
-    suspend fun incrementAccessCount(key: String)
+    @Query("DELETE FROM memories")
+    suspend fun deleteAllMemories()
     
     /**
-     * Busca recuerdos por texto
+     * Elimina memorias por clave
      */
-    @Query("SELECT * FROM memories WHERE `key` LIKE '%' || :query || '%' OR value LIKE '%' || :query || '%'")
-    fun search(query: String): Flow<List<Memory>>
+    @Query("DELETE FROM memories WHERE `key` = :key")
+    suspend fun deleteMemoriesByKey(key: String)
+    
+    /**
+     * Elimina memorias antiguas
+     */
+    @Query("DELETE FROM memories WHERE timestamp < :timestamp")
+    suspend fun deleteOldMemories(timestamp: Long)
 }
 

@@ -1,12 +1,16 @@
 package com.ritsuai.launcher.telephony
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.telecom.TelecomManager
 import android.telephony.PhoneStateListener
 import android.telephony.TelephonyManager
+import android.util.Log
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.ritsuai.launcher.ai.RitsuAICore
 import com.ritsuai.launcher.speech.TextToSpeechManager
@@ -14,28 +18,36 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Gestor de llamadas telefónicas para Ritsu.
- * Maneja la detección, respuesta y gestión de llamadas.
+ * Permite a Ritsu manejar llamadas entrantes y salientes.
  */
-class RitsuCallManager(private val context: Context) {
+class RitsuCallManager private constructor(private val context: Context) {
 
-    // Managers del sistema
-    private val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-    private val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+    // Tag para logs
+    private val TAG = "RitsuCallManager"
     
     // Componentes de Ritsu
     private val aiCore = RitsuAICore.getInstance(context)
     private val ttsManager = TextToSpeechManager.getInstance(context)
     
+    // Servicios del sistema
+    private val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+    private val telecomManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+    } else {
+        null
+    }
+    
     // Estado actual de la llamada
     private var currentCallState = TelephonyManager.CALL_STATE_IDLE
     private var incomingNumber: String? = null
-    private var ritsuAnswering = false
+    private var isRitsuHandlingCall = false
     
     // Scope de corrutinas
-    private val callScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     
     // Listener de estado del teléfono
     private val phoneStateListener = object : PhoneStateListener() {
@@ -44,240 +56,194 @@ class RitsuCallManager(private val context: Context) {
         }
     }
     
-    /**
-     * Inicializa el gestor de llamadas
-     */
-    fun initialize() {
-        // Registrar listener de estado del teléfono
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            telephonyManager.registerTelephonyCallback(
-                context.mainExecutor,
-                object : TelephonyManager.TelephonyCallback() {
-                    override fun onCallStateChanged(state: Int) {
-                        handleCallStateChanged(state, null)
-                    }
-                }
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE)
-        }
+    init {
+        // Registrar listener
+        telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE)
     }
     
     /**
      * Maneja cambios en el estado de la llamada
      */
     private fun handleCallStateChanged(state: Int, phoneNumber: String?) {
-        // Actualizar estado actual
         val previousState = currentCallState
         currentCallState = state
+        incomingNumber = phoneNumber
         
-        // Actualizar número entrante
-        if (phoneNumber != null) {
-            incomingNumber = phoneNumber
-        }
-        
-        // Manejar cambios de estado
         when (state) {
             TelephonyManager.CALL_STATE_RINGING -> {
                 // Llamada entrante
-                handleIncomingCall(incomingNumber)
+                Log.d(TAG, "Llamada entrante: $phoneNumber")
+                
+                // Notificar al usuario y preguntar si Ritsu debe responder
+                if (previousState == TelephonyManager.CALL_STATE_IDLE) {
+                    notifyIncomingCall(phoneNumber)
+                }
             }
             TelephonyManager.CALL_STATE_OFFHOOK -> {
                 // Llamada en curso
-                if (previousState == TelephonyManager.CALL_STATE_RINGING) {
-                    // Llamada contestada
-                    handleCallAnswered()
-                } else {
-                    // Llamada saliente
-                    handleOutgoingCall()
+                Log.d(TAG, "Llamada en curso: $phoneNumber")
+                
+                // Si Ritsu está manejando la llamada, iniciar conversación
+                if (isRitsuHandlingCall) {
+                    startCallConversation(phoneNumber)
                 }
             }
             TelephonyManager.CALL_STATE_IDLE -> {
-                // Llamada finalizada
-                if (previousState == TelephonyManager.CALL_STATE_OFFHOOK) {
-                    handleCallEnded()
-                } else if (previousState == TelephonyManager.CALL_STATE_RINGING) {
-                    // Llamada rechazada o perdida
-                    handleCallRejected()
+                // Sin llamada
+                Log.d(TAG, "Sin llamada")
+                
+                // Si había una llamada en curso, finalizar conversación
+                if (previousState == TelephonyManager.CALL_STATE_OFFHOOK && isRitsuHandlingCall) {
+                    endCallConversation()
                 }
+                
+                // Resetear estado
+                isRitsuHandlingCall = false
             }
         }
     }
     
     /**
-     * Maneja una llamada entrante
+     * Notifica al usuario sobre una llamada entrante
      */
-    private fun handleIncomingCall(phoneNumber: String?) {
-        // Notificar a Ritsu sobre la llamada entrante
-        callScope.launch {
+    private fun notifyIncomingCall(phoneNumber: String?) {
+        managerScope.launch {
+            // Obtener información del contacto
             val contactName = getContactName(phoneNumber)
-            val message = "Llamada entrante de $contactName"
             
-            // Generar respuesta de Ritsu
-            val response = aiCore.processMessage(message, "call")
-            
-            // Notificar al usuario (implementación específica depende de la UI)
-            // Por ejemplo, mostrar una notificación o un diálogo
-        }
-    }
-    
-    /**
-     * Maneja una llamada contestada
-     */
-    private fun handleCallAnswered() {
-        // Si Ritsu debe responder la llamada
-        if (ritsuAnswering) {
-            callScope.launch {
-                // Esperar un momento antes de hablar
-                kotlinx.coroutines.delay(1000)
-                
-                // Obtener saludo personalizado
-                val contactName = getContactName(incomingNumber)
-                val greeting = getCallGreeting(contactName)
-                
-                // Hablar
-                ttsManager.speak(greeting)
+            // Crear mensaje para el usuario
+            val message = if (contactName != null) {
+                "Llamada entrante de $contactName. ¿Quieres que responda por ti?"
+            } else {
+                "Llamada entrante de $phoneNumber. ¿Quieres que responda por ti?"
             }
-        }
-    }
-    
-    /**
-     * Maneja una llamada saliente
-     */
-    private fun handleOutgoingCall() {
-        // Implementación específica para llamadas salientes
-    }
-    
-    /**
-     * Maneja una llamada finalizada
-     */
-    private fun handleCallEnded() {
-        // Resetear estado
-        ritsuAnswering = false
-        incomingNumber = null
-        
-        // Notificar a Ritsu
-        callScope.launch {
-            aiCore.processMessage("Llamada finalizada", "call")
-        }
-    }
-    
-    /**
-     * Maneja una llamada rechazada o perdida
-     */
-    private fun handleCallRejected() {
-        // Resetear estado
-        ritsuAnswering = false
-        
-        // Notificar a Ritsu sobre la llamada perdida
-        callScope.launch {
-            val contactName = getContactName(incomingNumber)
-            val message = "Llamada perdida de $contactName"
             
-            // Generar respuesta de Ritsu
-            aiCore.processMessage(message, "call")
+            // Procesar con IA para personalizar
+            val personalizedMessage = withContext(Dispatchers.Default) {
+                aiCore.processMessage(message, "call_notification")
+            }
+            
+            // Hablar mensaje
+            ttsManager.speak(personalizedMessage)
+            
+            // En una implementación real, se mostraría una interfaz para que el usuario decida
+            // Para este ejemplo, asumimos que el usuario quiere que Ritsu responda
+            // después de un tiempo determinado
+            
+            // TODO: Implementar interfaz de decisión
         }
+    }
+    
+    /**
+     * Inicia la conversación de Ritsu en una llamada
+     */
+    private fun startCallConversation(phoneNumber: String?) {
+        managerScope.launch {
+            // Obtener información del contacto
+            val contactName = getContactName(phoneNumber)
+            
+            // Crear mensaje inicial
+            val initialMessage = if (contactName != null) {
+                "Hola $contactName, soy Ritsu, el asistente virtual. ¿En qué puedo ayudarte?"
+            } else {
+                "Hola, soy Ritsu, el asistente virtual. ¿En qué puedo ayudarte?"
+            }
+            
+            // Procesar con IA para personalizar
+            val personalizedMessage = withContext(Dispatchers.Default) {
+                aiCore.processMessage(initialMessage, "call_greeting")
+            }
+            
+            // Hablar mensaje
+            ttsManager.speak(personalizedMessage)
+            
+            // En una implementación real, se activaría el reconocimiento de voz
+            // para escuchar al interlocutor y mantener una conversación
+            
+            // TODO: Implementar reconocimiento de voz durante la llamada
+        }
+    }
+    
+    /**
+     * Finaliza la conversación de Ritsu en una llamada
+     */
+    private fun endCallConversation() {
+        managerScope.launch {
+            // Crear mensaje de despedida
+            val farewellMessage = "Gracias por llamar. Hasta luego."
+            
+            // Procesar con IA para personalizar
+            val personalizedMessage = withContext(Dispatchers.Default) {
+                aiCore.processMessage(farewellMessage, "call_farewell")
+            }
+            
+            // Hablar mensaje
+            ttsManager.speak(personalizedMessage)
+            
+            // Guardar resumen de la conversación
+            saveCallSummary()
+        }
+    }
+    
+    /**
+     * Guarda un resumen de la conversación
+     */
+    private fun saveCallSummary() {
+        // En una implementación real, se guardaría un resumen de la conversación
+        // en la base de datos para mostrarlo al usuario después
         
-        incomingNumber = null
+        // TODO: Implementar guardado de resumen
     }
     
     /**
-     * Configura a Ritsu para responder la próxima llamada
+     * Obtiene el nombre de un contacto a partir de su número de teléfono
      */
-    fun setRitsuToAnswerCall(answer: Boolean) {
-        ritsuAnswering = answer
-    }
-    
-    /**
-     * Realiza una llamada telefónica
-     *
-     * @param phoneNumber Número de teléfono a llamar
-     * @return true si la llamada se inició correctamente, false en caso contrario
-     */
-    fun makeCall(phoneNumber: String): Boolean {
-        try {
-            val intent = Intent(Intent.ACTION_CALL)
-            intent.data = Uri.parse("tel:$phoneNumber")
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-            return true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return false
-        }
+    private fun getContactName(phoneNumber: String?): String? {
+        // En una implementación real, se buscaría el contacto en la agenda
+        // Para este ejemplo, devolvemos null
+        return null
     }
     
     /**
      * Responde una llamada entrante
-     *
-     * @return true si la llamada se respondió correctamente, false en caso contrario
      */
-    fun answerCall(): Boolean {
+    fun answerCall() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                telecomManager.acceptRingingCall()
-                return true
-            } catch (e: Exception) {
-                e.printStackTrace()
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ANSWER_PHONE_CALLS) == PackageManager.PERMISSION_GRANTED) {
+                telecomManager?.acceptRingingCall()
+                isRitsuHandlingCall = true
             }
         }
-        return false
     }
     
     /**
      * Rechaza una llamada entrante
-     *
-     * @return true si la llamada se rechazó correctamente, false en caso contrario
      */
-    fun rejectCall(): Boolean {
+    fun rejectCall() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            try {
-                telecomManager.endCall()
-                return true
-            } catch (e: Exception) {
-                e.printStackTrace()
+            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ANSWER_PHONE_CALLS) == PackageManager.PERMISSION_GRANTED) {
+                telecomManager?.endCall()
             }
         }
-        return false
     }
     
     /**
-     * Finaliza la llamada actual
-     *
-     * @return true si la llamada se finalizó correctamente, false en caso contrario
+     * Realiza una llamada saliente
      */
-    fun endCall(): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            try {
-                telecomManager.endCall()
-                return true
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+    fun makeCall(phoneNumber: String) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+            val intent = Intent(Intent.ACTION_CALL)
+            intent.data = Uri.parse("tel:$phoneNumber")
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
         }
-        return false
     }
     
     /**
-     * Obtiene el nombre del contacto a partir del número de teléfono
+     * Establece si Ritsu debe manejar la llamada actual
      */
-    private fun getContactName(phoneNumber: String?): String {
-        if (phoneNumber == null) return "Desconocido"
-        
-        // Implementación simplificada
-        // En una implementación real, se consultaría la base de datos de contactos
-        return "Contacto"
-    }
-    
-    /**
-     * Obtiene un saludo personalizado para la llamada
-     */
-    private fun getCallGreeting(contactName: String): String {
-        // Obtener nombre del usuario
-        val userName = "Usuario" // En una implementación real, se obtendría de la configuración
-        
-        return "Hola, soy Ritsu, la asistente de $userName. ¿En qué puedo ayudarte?"
+    fun setRitsuHandlingCall(handling: Boolean) {
+        isRitsuHandlingCall = handling
     }
     
     companion object {

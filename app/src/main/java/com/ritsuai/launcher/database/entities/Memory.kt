@@ -5,47 +5,24 @@ import androidx.room.PrimaryKey
 import java.util.Date
 
 /**
- * Entidad para almacenar la memoria persistente de Ritsu.
- * Almacena información aprendida sobre el usuario y sus preferencias.
+ * Entidad que representa una memoria de Ritsu.
+ * Almacena información aprendida sobre el usuario y su entorno.
+ *
+ * @property id Identificador único de la memoria
+ * @property key Clave de la memoria (categoría)
+ * @property value Valor de la memoria
+ * @property source Fuente de la memoria (conversation, system, etc.)
+ * @property timestamp Fecha y hora de creación
+ * @property confidence Nivel de confianza (0.0 - 1.0)
  */
 @Entity(tableName = "memories")
 data class Memory(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    
-    /**
-     * Clave única para identificar este recuerdo
-     */
     val key: String,
-    
-    /**
-     * Valor asociado con la clave
-     */
     val value: String,
-    
-    /**
-     * Categoría del recuerdo (preferencia, contacto, hábito, etc.)
-     */
-    val category: String,
-    
-    /**
-     * Nivel de importancia (0-10)
-     */
-    val importance: Int = 5,
-    
-    /**
-     * Fecha de creación
-     */
-    val createdAt: Date = Date(),
-    
-    /**
-     * Fecha de última actualización
-     */
-    val updatedAt: Date = Date(),
-    
-    /**
-     * Contador de accesos a este recuerdo
-     */
-    val accessCount: Int = 0
+    val source: String,
+    val timestamp: Date,
+    val confidence: Float = 1.0f
 )
 

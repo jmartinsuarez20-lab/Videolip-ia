@@ -5,68 +5,80 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.ritsuai.launcher.database.entities.Conversation
-import kotlinx.coroutines.flow.Flow
-import java.util.Date
 
 /**
- * DAO para acceder a la tabla de conversaciones.
+ * DAO para la entidad Conversation.
+ * Proporciona métodos para acceder a las conversaciones almacenadas.
  */
 @Dao
 interface ConversationDao {
     
     /**
-     * Inserta un nuevo mensaje en la conversación
+     * Inserta una nueva conversación
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(conversation: Conversation): Long
     
     /**
-     * Elimina un mensaje de la conversación
+     * Actualiza una conversación existente
+     */
+    @Update
+    suspend fun update(conversation: Conversation)
+    
+    /**
+     * Elimina una conversación
      */
     @Delete
     suspend fun delete(conversation: Conversation)
     
     /**
-     * Obtiene todos los mensajes de una sesión de conversación
+     * Obtiene todas las conversaciones
      */
-    @Query("SELECT * FROM conversations WHERE sessionId = :sessionId ORDER BY timestamp ASC")
-    fun getConversationBySession(sessionId: String): Flow<List<Conversation>>
+    @Query("SELECT * FROM conversations ORDER BY timestamp DESC")
+    suspend fun getAllConversations(): List<Conversation>
     
     /**
-     * Obtiene las conversaciones más recientes agrupadas por sesión
+     * Obtiene las conversaciones recientes
      */
-    @Query("SELECT * FROM conversations WHERE id IN (SELECT MAX(id) FROM conversations GROUP BY sessionId) ORDER BY timestamp DESC LIMIT :limit")
-    fun getRecentConversations(limit: Int): Flow<List<Conversation>>
+    @Query("SELECT * FROM conversations ORDER BY timestamp DESC LIMIT :limit")
+    suspend fun getRecentConversations(limit: Int): List<Conversation>
     
     /**
-     * Obtiene los mensajes de una sesión en un rango de tiempo
+     * Obtiene las conversaciones importantes
      */
-    @Query("SELECT * FROM conversations WHERE sessionId = :sessionId AND timestamp BETWEEN :startDate AND :endDate ORDER BY timestamp ASC")
-    fun getConversationInTimeRange(sessionId: String, startDate: Date, endDate: Date): Flow<List<Conversation>>
+    @Query("SELECT * FROM conversations WHERE isImportant = 1 ORDER BY timestamp DESC")
+    suspend fun getImportantConversations(): List<Conversation>
     
     /**
-     * Busca mensajes por contenido
+     * Busca conversaciones por texto
      */
-    @Query("SELECT * FROM conversations WHERE message LIKE '%' || :query || '%' ORDER BY timestamp DESC")
-    fun searchMessages(query: String): Flow<List<Conversation>>
+    @Query("SELECT * FROM conversations WHERE message LIKE :query OR response LIKE :query ORDER BY timestamp DESC")
+    suspend fun searchConversations(query: String): List<Conversation>
     
     /**
-     * Obtiene los últimos N mensajes de una sesión
+     * Obtiene conversaciones por intención
      */
-    @Query("SELECT * FROM conversations WHERE sessionId = :sessionId ORDER BY timestamp DESC LIMIT :limit")
-    fun getLastMessages(sessionId: String, limit: Int): Flow<List<Conversation>>
+    @Query("SELECT * FROM conversations WHERE intent = :intent ORDER BY timestamp DESC")
+    suspend fun getConversationsByIntent(intent: String): List<Conversation>
     
     /**
-     * Elimina todos los mensajes de una sesión
+     * Obtiene conversaciones por fuente
      */
-    @Query("DELETE FROM conversations WHERE sessionId = :sessionId")
-    suspend fun deleteConversation(sessionId: String)
+    @Query("SELECT * FROM conversations WHERE source = :source ORDER BY timestamp DESC")
+    suspend fun getConversationsBySource(source: String): List<Conversation>
     
     /**
-     * Elimina conversaciones anteriores a una fecha
+     * Elimina todas las conversaciones
      */
-    @Query("DELETE FROM conversations WHERE timestamp < :date")
-    suspend fun deleteConversationsOlderThan(date: Date)
+    @Query("DELETE FROM conversations")
+    suspend fun deleteAllConversations()
+    
+    /**
+     * Elimina conversaciones antiguas
+     */
+    @Query("DELETE FROM conversations WHERE timestamp < :timestamp AND isImportant = 0")
+    suspend fun deleteOldConversations(timestamp: Long)
 }
 

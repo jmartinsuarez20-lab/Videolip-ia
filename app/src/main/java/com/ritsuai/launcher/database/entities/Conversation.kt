@@ -5,46 +5,26 @@ import androidx.room.PrimaryKey
 import java.util.Date
 
 /**
- * Entidad para almacenar conversaciones entre el usuario y Ritsu.
+ * Entidad que representa una conversación.
+ * Almacena mensajes intercambiados entre el usuario y Ritsu.
+ *
+ * @property id Identificador único de la conversación
+ * @property message Mensaje del usuario
+ * @property response Respuesta de Ritsu
+ * @property source Fuente del mensaje (user, system, notification, etc.)
+ * @property intent Intención reconocida
+ * @property timestamp Fecha y hora de la conversación
+ * @property isImportant Indica si la conversación es importante
  */
 @Entity(tableName = "conversations")
 data class Conversation(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    
-    /**
-     * Mensaje del usuario o de Ritsu
-     */
     val message: String,
-    
-    /**
-     * Indica si el mensaje es del usuario (true) o de Ritsu (false)
-     */
-    val isUserMessage: Boolean,
-    
-    /**
-     * Contexto de la conversación (chat general, llamada, WhatsApp, etc.)
-     */
-    val context: String,
-    
-    /**
-     * Identificador de la sesión de conversación
-     */
-    val sessionId: String,
-    
-    /**
-     * Fecha y hora del mensaje
-     */
-    val timestamp: Date = Date(),
-    
-    /**
-     * Sentimiento detectado en el mensaje (neutral, positivo, negativo)
-     */
-    val sentiment: String = "neutral",
-    
-    /**
-     * Intención detectada en el mensaje (pregunta, comando, charla, etc.)
-     */
-    val intent: String = "chat"
+    val response: String,
+    val source: String,
+    val intent: String,
+    val timestamp: Date,
+    val isImportant: Boolean = false
 )
 

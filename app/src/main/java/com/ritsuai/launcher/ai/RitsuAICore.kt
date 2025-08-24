@@ -1,27 +1,26 @@
 package com.ritsuai.launcher.ai
 
 import android.content.Context
+import android.util.Log
 import com.ritsuai.launcher.ai.nlp.ContextManager
 import com.ritsuai.launcher.ai.nlp.IntentRecognizer
 import com.ritsuai.launcher.ai.nlp.ResponseGenerator
 import com.ritsuai.launcher.database.RitsuDatabase
 import com.ritsuai.launcher.database.entities.Conversation
 import com.ritsuai.launcher.database.entities.Memory
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Date
-import java.util.UUID
 
 /**
  * Núcleo de inteligencia artificial de Ritsu.
- * Gestiona el procesamiento de lenguaje natural, la generación de respuestas
- * y la memoria persistente.
+ * Procesa mensajes, reconoce intenciones y genera respuestas.
  */
-class RitsuAICore(private val context: Context) {
+class RitsuAICore private constructor(private val context: Context) {
 
+    // Tag para logs
+    private val TAG = "RitsuAICore"
+    
     // Componentes de NLP
     private val intentRecognizer = IntentRecognizer(context)
     private val contextManager = ContextManager()
@@ -29,201 +28,170 @@ class RitsuAICore(private val context: Context) {
     
     // Base de datos
     private val database = RitsuDatabase.getInstance(context)
+    private val conversationDao = database.conversationDao()
+    private val memoryDao = database.memoryDao()
     
-    // Scope de corrutinas
-    private val aiScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    
-    // ID de sesión actual
-    private var currentSessionId = UUID.randomUUID().toString()
+    // Estado actual
+    private var currentMood = "neutral"
+    private var userName = "Usuario"
     
     /**
-     * Procesa un mensaje del usuario y genera una respuesta
+     * Procesa un mensaje y genera una respuesta
      *
-     * @param userMessage Mensaje del usuario
-     * @param conversationContext Contexto de la conversación (chat, llamada, WhatsApp, etc.)
+     * @param message Mensaje a procesar
+     * @param source Fuente del mensaje (user, system, notification, etc.)
      * @return Respuesta generada
      */
-    suspend fun processMessage(userMessage: String, conversationContext: String = "chat"): String {
+    suspend fun processMessage(message: String, source: String = "user"): String {
         return withContext(Dispatchers.Default) {
-            // Guardar mensaje del usuario en la base de datos
-            saveMessage(userMessage, true, conversationContext)
+            Log.d(TAG, "Procesando mensaje: $message (fuente: $source)")
             
-            // Reconocer intención
-            val intent = intentRecognizer.recognizeIntent(userMessage)
-            
-            // Analizar sentimiento
-            val sentiment = intentRecognizer.analyzeSentiment(userMessage)
-            
-            // Actualizar contexto
-            contextManager.updateContext(userMessage, intent, sentiment)
-            
-            // Generar respuesta
-            val response = responseGenerator.generateResponse(
-                userMessage,
-                intent,
-                sentiment,
-                contextManager.getCurrentContext()
-            )
-            
-            // Guardar respuesta en la base de datos
-            saveMessage(response, false, conversationContext, intent, sentiment)
-            
-            // Aprender de la interacción
-            learnFromInteraction(userMessage, response, intent, sentiment)
-            
-            response
-        }
-    }
-    
-    /**
-     * Guarda un mensaje en la base de datos
-     */
-    private suspend fun saveMessage(
-        message: String,
-        isUserMessage: Boolean,
-        context: String,
-        intent: String = "chat",
-        sentiment: String = "neutral"
-    ) {
-        withContext(Dispatchers.IO) {
-            val conversation = Conversation(
-                message = message,
-                isUserMessage = isUserMessage,
-                context = context,
-                sessionId = currentSessionId,
-                timestamp = Date(),
-                sentiment = sentiment,
-                intent = intent
-            )
-            
-            database.conversationDao().insert(conversation)
-        }
-    }
-    
-    /**
-     * Aprende de la interacción entre el usuario y Ritsu
-     */
-    private fun learnFromInteraction(
-        userMessage: String,
-        response: String,
-        intent: String,
-        sentiment: String
-    ) {
-        aiScope.launch {
-            // Ejemplo: si el usuario menciona una preferencia, guardarla
-            if (intent == "preference" && userMessage.contains("me gusta")) {
-                val preference = extractPreference(userMessage)
-                if (preference.isNotEmpty()) {
-                    saveMemory("preference_${preference.hashCode()}", preference, "preference", 7)
-                }
-            }
-            
-            // Ejemplo: si el usuario menciona un contacto frecuente
-            if (intent == "contact" && userMessage.contains("llama a")) {
-                val contact = extractContact(userMessage)
-                if (contact.isNotEmpty()) {
-                    saveMemory("contact_${contact.hashCode()}", contact, "contact", 6)
-                }
-            }
-            
-            // Ejemplo: aprender del sentimiento del usuario
-            if (sentiment != "neutral") {
-                val key = "sentiment_${Date().time}"
-                saveMemory(key, "$sentiment: $userMessage", "sentiment", 4)
+            try {
+                // Reconocer intención
+                val intent = intentRecognizer.recognizeIntent(message)
+                Log.d(TAG, "Intención reconocida: ${intent.name}")
+                
+                // Actualizar contexto
+                contextManager.updateContext(message, intent, source)
+                
+                // Generar respuesta
+                val response = responseGenerator.generateResponse(message, intent, contextManager.getCurrentContext())
+                
+                // Guardar conversación
+                saveConversation(message, response, source, intent.name)
+                
+                // Extraer y guardar memoria si es necesario
+                extractAndSaveMemory(message, intent)
+                
+                // Actualizar estado de ánimo si es necesario
+                updateMood(message, intent)
+                
+                response
+            } catch (e: Exception) {
+                Log.e(TAG, "Error al procesar mensaje", e)
+                "Lo siento, ha ocurrido un error al procesar tu mensaje."
             }
         }
     }
     
     /**
-     * Extrae una preferencia del mensaje del usuario
+     * Guarda una conversación en la base de datos
      */
-    private fun extractPreference(message: String): String {
-        // Implementación simplificada
-        val pattern = "me gusta (.+?)(?:\\.|,|$)"
-        val regex = Regex(pattern, RegexOption.IGNORE_CASE)
-        val matchResult = regex.find(message)
-        return matchResult?.groupValues?.getOrNull(1)?.trim() ?: ""
+    private suspend fun saveConversation(message: String, response: String, source: String, intent: String) {
+        val conversation = Conversation(
+            id = 0, // Auto-generado
+            message = message,
+            response = response,
+            source = source,
+            intent = intent,
+            timestamp = Date(),
+            isImportant = isImportantConversation(intent)
+        )
+        
+        conversationDao.insert(conversation)
     }
     
     /**
-     * Extrae un contacto del mensaje del usuario
+     * Extrae y guarda memoria de un mensaje
      */
-    private fun extractContact(message: String): String {
-        // Implementación simplificada
-        val pattern = "llama a (.+?)(?:\\.|,|$)"
-        val regex = Regex(pattern, RegexOption.IGNORE_CASE)
-        val matchResult = regex.find(message)
-        return matchResult?.groupValues?.getOrNull(1)?.trim() ?: ""
-    }
-    
-    /**
-     * Guarda un recuerdo en la memoria persistente
-     */
-    private suspend fun saveMemory(key: String, value: String, category: String, importance: Int) {
-        withContext(Dispatchers.IO) {
-            // Verificar si ya existe
-            val existingMemory = database.memoryDao().getByKey(key)
+    private suspend fun extractAndSaveMemory(message: String, intent: IntentRecognizer.Intent) {
+        // Solo extraer memoria de ciertos tipos de intenciones
+        if (intent.name in listOf("PERSONAL_INFO", "PREFERENCE", "CONTACT_INFO", "SCHEDULE")) {
+            // Extraer información relevante
+            val memoryValue = extractMemoryValue(message, intent)
             
-            if (existingMemory != null) {
-                // Actualizar existente
-                val updatedMemory = existingMemory.copy(
-                    value = value,
-                    importance = importance,
-                    updatedAt = Date(),
-                    accessCount = existingMemory.accessCount + 1
-                )
-                database.memoryDao().update(updatedMemory)
-            } else {
-                // Crear nuevo
+            if (memoryValue.isNotEmpty()) {
                 val memory = Memory(
-                    key = key,
-                    value = value,
-                    category = category,
-                    importance = importance
+                    id = 0, // Auto-generado
+                    key = intent.name.toLowerCase(),
+                    value = memoryValue,
+                    source = "conversation",
+                    timestamp = Date(),
+                    confidence = 0.8f // Valor por defecto
                 )
-                database.memoryDao().insert(memory)
+                
+                memoryDao.insert(memory)
             }
         }
     }
     
     /**
-     * Recupera un recuerdo de la memoria persistente
+     * Extrae valor de memoria de un mensaje
      */
-    suspend fun getMemory(key: String): String? {
-        return withContext(Dispatchers.IO) {
-            val memory = database.memoryDao().getByKey(key)
-            if (memory != null) {
-                // Incrementar contador de accesos
-                database.memoryDao().incrementAccessCount(key)
-                memory.value
-            } else {
-                null
-            }
+    private fun extractMemoryValue(message: String, intent: IntentRecognizer.Intent): String {
+        // En una implementación real, se usaría NLP para extraer información
+        // Para este ejemplo, simplemente devolvemos el mensaje
+        return message
+    }
+    
+    /**
+     * Actualiza el estado de ánimo de Ritsu
+     */
+    private fun updateMood(message: String, intent: IntentRecognizer.Intent) {
+        // En una implementación real, se analizaría el sentimiento del mensaje
+        // Para este ejemplo, usamos reglas simples
+        
+        val newMood = when {
+            message.contains("feliz") || message.contains("alegre") || message.contains("gracias") -> "happy"
+            message.contains("triste") || message.contains("mal") || message.contains("llorar") -> "sad"
+            message.contains("enojado") || message.contains("molesto") || message.contains("furioso") -> "angry"
+            message.contains("tranquilo") || message.contains("relajado") || message.contains("calma") -> "relaxed"
+            message.contains("cansado") || message.contains("sueño") || message.contains("dormir") -> "sleepy"
+            else -> currentMood
+        }
+        
+        if (newMood != currentMood) {
+            currentMood = newMood
+            Log.d(TAG, "Nuevo estado de ánimo: $currentMood")
         }
     }
     
     /**
-     * Recupera recuerdos por categoría
+     * Verifica si una conversación es importante
      */
-    suspend fun getMemoriesByCategory(category: String): List<Memory> {
-        return withContext(Dispatchers.IO) {
-            database.memoryDao().getByCategorySync(category)
-        }
+    private fun isImportantConversation(intent: String): Boolean {
+        return intent in listOf(
+            "EMERGENCY",
+            "PERSONAL_INFO",
+            "CONTACT_INFO",
+            "SCHEDULE",
+            "REMINDER"
+        )
     }
     
     /**
-     * Inicia una nueva sesión de conversación
+     * Obtiene el estado de ánimo actual de Ritsu
      */
-    fun startNewSession() {
-        currentSessionId = UUID.randomUUID().toString()
-        contextManager.resetContext()
+    fun getCurrentMood(): String {
+        return currentMood
     }
     
     /**
-     * Obtiene el ID de la sesión actual
+     * Establece el nombre del usuario
      */
-    fun getCurrentSessionId(): String {
-        return currentSessionId
+    fun setUserName(name: String) {
+        userName = name
+    }
+    
+    /**
+     * Obtiene el nombre del usuario
+     */
+    fun getUserName(): String {
+        return userName
+    }
+    
+    /**
+     * Busca en la memoria de Ritsu
+     */
+    suspend fun searchMemory(query: String): List<Memory> {
+        return memoryDao.searchMemory("%$query%")
+    }
+    
+    /**
+     * Obtiene las conversaciones recientes
+     */
+    suspend fun getRecentConversations(limit: Int = 10): List<Conversation> {
+        return conversationDao.getRecentConversations(limit)
     }
     
     companion object {

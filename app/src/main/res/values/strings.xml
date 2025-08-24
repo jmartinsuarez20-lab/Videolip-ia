@@ -1,35 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Nombre de la aplicación -->
     <string name="app_name">Ritsu AI</string>
     
-    <!-- Permisos -->
-    <string name="permission_required">Permiso requerido</string>
-    <string name="overlay_permission_required">Ritsu necesita permiso para aparecer sobre otras aplicaciones. Por favor, concede este permiso para que Ritsu pueda asistirte en cualquier momento.</string>
-    <string name="accessibility_permission_required">Ritsu necesita acceso a servicios de accesibilidad para poder controlar tu dispositivo. Por favor, habilita el servicio de accesibilidad de Ritsu.</string>
-    <string name="permission_denied">Permiso denegado. Algunas funciones no estarán disponibles.</string>
-    
-    <!-- Pantalla principal -->
-    <string name="search_apps">Buscar aplicaciones…</string>
-    <string name="voice_command_help">Comando de voz</string>
-    <string name="app_info">Información de la aplicación</string>
-    
-    <!-- Avatar -->
-    <string name="avatar_settings">Configuración del avatar</string>
+    <!-- Mensajes de Ritsu -->
+    <string name="ritsu_greeting">¡Hola! Soy Ritsu, tu asistente personal. ¿En qué puedo ayudarte hoy?</string>
+    <string name="ritsu_farewell">¡Hasta luego! Estaré aquí cuando me necesites.</string>
+    <string name="ritsu_thinking">Estoy pensando…</string>
+    <string name="ritsu_error">Lo siento, ha ocurrido un error. Por favor, inténtalo de nuevo.</string>
     
     <!-- Comandos de voz -->
     <string name="voice_command">Comando de voz</string>
-    <string name="tap_to_speak">Toca para hablar</string>
-    <string name="listening">Escuchando…</string>
-    <string name="processing">Procesando…</string>
-    <string name="starting">Iniciando…</string>
-    <string name="ready">Listo</string>
-    <string name="recognized_text">Texto reconocido:</string>
-    <string name="ritsu_response">Respuesta de Ritsu:</string>
-    <string name="start_listening">Iniciar escucha</string>
-    <string name="cancel_listening">Cancelar escucha</string>
-    <string name="listening_indicator">Indicador de escucha</string>
+    <string name="voice_command_help">Di \"Hola Ritsu\" seguido de tu pregunta o comando</string>
+    <string name="voice_command_listening">Escuchando…</string>
+    <string name="voice_command_processing">Procesando…</string>
     
-    <!-- Botones generales -->
+    <!-- Permisos -->
+    <string name="permission_required">Permiso requerido</string>
+    <string name="permission_rationale">Esta función requiere permisos adicionales para funcionar correctamente.</string>
+    <string name="permission_denied">Permiso denegado. Algunas funciones no estarán disponibles.</string>
+    
+    <!-- Notificaciones -->
+    <string name="notification_channel_name">Notificaciones de Ritsu</string>
+    <string name="notification_channel_description">Notificaciones y alertas de Ritsu AI</string>
+    <string name="notification_new_message">Nuevo mensaje</string>
+    
+    <!-- Cajón de aplicaciones -->
+    <string name="app_drawer">Aplicaciones</string>
+    <string name="search_apps">Buscar aplicaciones</string>
+    <string name="app_info">Información de la aplicación</string>
+    <string name="no_apps_found">No se encontraron aplicaciones</string>
+    
+    <!-- Widgets -->
+    <string name="widgets">Widgets</string>
+    <string name="add_widget">Añadir widget</string>
+    <string name="remove_widget">Eliminar widget</string>
+    <string name="widget_weather">Clima</string>
+    <string name="widget_calendar">Calendario</string>
+    <string name="widget_music">Música</string>
+    <string name="widget_notes">Notas</string>
+    
+    <!-- Configuración -->
+    <string name="settings">Configuración</string>
+    <string name="theme">Tema</string>
+    <string name="language">Idioma</string>
+    <string name="notifications">Notificaciones</string>
+    <string name="privacy">Privacidad</string>
+    <string name="about">Acerca de</string>
+    
+    <!-- Acciones -->
     <string name="ok">Aceptar</string>
     <string name="cancel">Cancelar</string>
     <string name="save">Guardar</string>
@@ -38,15 +57,13 @@
     <string name="share">Compartir</string>
     
     <!-- Mensajes de error -->
-    <string name="error_generic">Ha ocurrido un error</string>
-    <string name="error_network">Error de conexión. Verifica tu conexión a internet.</string>
-    <string name="error_app_not_found">Aplicación no encontrada</string>
-    <string name="error_contact_not_found">Contacto no encontrado</string>
+    <string name="error_network">Error de red. Por favor, verifica tu conexión.</string>
+    <string name="error_unknown">Ha ocurrido un error desconocido.</string>
+    <string name="error_permission">No se pueden obtener los permisos necesarios.</string>
     
-    <!-- Mensajes de Ritsu -->
-    <string name="ritsu_greeting">Hola, soy Ritsu. ¿En qué puedo ayudarte?</string>
-    <string name="ritsu_farewell">Hasta luego, estaré aquí cuando me necesites.</string>
-    <string name="ritsu_thinking">Estoy pensando…</string>
-    <string name="ritsu_not_understood">Lo siento, no he entendido. ¿Puedes repetirlo?</string>
+    <!-- Mensajes de éxito -->
+    <string name="success_saved">Guardado correctamente</string>
+    <string name="success_deleted">Eliminado correctamente</string>
+    <string name="success_updated">Actualizado correctamente</string>
 </resources>
 
