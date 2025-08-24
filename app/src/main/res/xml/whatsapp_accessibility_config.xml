@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/accessibility_permission_required"
+    android:packageNames="com.whatsapp,com.whatsapp.w4b"
+    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds|flagRequestTouchExplorationMode|flagRequestEnhancedWebAccessibility|flagRetrieveInteractiveWindows"
+    android:accessibilityFeedbackType="feedbackSpoken|feedbackHaptic|feedbackAudible|feedbackVisual"
+    android:notificationTimeout="100"
+    android:canRetrieveWindowContent="true"
+    android:settingsActivity="com.ritsuai.launcher.ui.SettingsActivity"
+    android:canRequestTouchExplorationMode="true"
+    android:canPerformGestures="true" />
+

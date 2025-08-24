@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ritsu AI</string>
+    
+    <!-- Permisos -->
+    <string name="permission_required">Permiso requerido</string>
+    <string name="overlay_permission_required">Ritsu necesita permiso para aparecer sobre otras aplicaciones. Por favor, concede este permiso para que Ritsu pueda asistirte en cualquier momento.</string>
+    <string name="accessibility_permission_required">Ritsu necesita acceso a servicios de accesibilidad para poder controlar tu dispositivo. Por favor, habilita el servicio de accesibilidad de Ritsu.</string>
+    <string name="permission_denied">Permiso denegado. Algunas funciones no estarán disponibles.</string>
+    
+    <!-- Pantalla principal -->
+    <string name="search_apps">Buscar aplicaciones…</string>
+    <string name="voice_command_help">Comando de voz</string>
+    <string name="app_info">Información de la aplicación</string>
+    
+    <!-- Avatar -->
+    <string name="avatar_settings">Configuración del avatar</string>
+    
+    <!-- Comandos de voz -->
+    <string name="voice_command">Comando de voz</string>
+    <string name="tap_to_speak">Toca para hablar</string>
+    <string name="listening">Escuchando…</string>
+    <string name="processing">Procesando…</string>
+    <string name="starting">Iniciando…</string>
+    <string name="ready">Listo</string>
+    <string name="recognized_text">Texto reconocido:</string>
+    <string name="ritsu_response">Respuesta de Ritsu:</string>
+    <string name="start_listening">Iniciar escucha</string>
+    <string name="cancel_listening">Cancelar escucha</string>
+    <string name="listening_indicator">Indicador de escucha</string>
+    
+    <!-- Botones generales -->
+    <string name="ok">Aceptar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="save">Guardar</string>
+    <string name="delete">Eliminar</string>
+    <string name="edit">Editar</string>
+    <string name="share">Compartir</string>
+    
+    <!-- Mensajes de error -->
+    <string name="error_generic">Ha ocurrido un error</string>
+    <string name="error_network">Error de conexión. Verifica tu conexión a internet.</string>
+    <string name="error_app_not_found">Aplicación no encontrada</string>
+    <string name="error_contact_not_found">Contacto no encontrado</string>
+    
+    <!-- Mensajes de Ritsu -->
+    <string name="ritsu_greeting">Hola, soy Ritsu. ¿En qué puedo ayudarte?</string>
+    <string name="ritsu_farewell">Hasta luego, estaré aquí cuando me necesites.</string>
+    <string name="ritsu_thinking">Estoy pensando…</string>
+    <string name="ritsu_not_understood">Lo siento, no he entendido. ¿Puedes repetirlo?</string>
+</resources>
+
