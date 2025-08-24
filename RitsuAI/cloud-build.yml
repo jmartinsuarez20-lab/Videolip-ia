@@ -1,0 +1,70 @@
+# Archivo de configuración para compilación en la nube (AppCenter, Bitrise, etc.)
+
+# Configuración para AppCenter
+appcenter:
+  # Versión de Android SDK
+  android_sdk: 34
+  
+  # Versión de Java
+  java_version: 17
+  
+  # Comandos pre-compilación
+  pre_build:
+    - echo "Iniciando compilación de Ritsu AI"
+    - chmod +x ./gradlew
+  
+  # Comandos de compilación
+  build:
+    - ./gradlew clean
+    - ./gradlew assembleDebug
+  
+  # Comandos post-compilación
+  post_build:
+    - echo "Compilación completada"
+    - find . -name "*.apk" -type f -print
+  
+  # Artefactos a publicar
+  artifacts:
+    - app/build/outputs/apk/debug/app-debug.apk
+
+# Configuración para Bitrise
+bitrise:
+  # Versión de Android SDK
+  android_sdk: 34
+  
+  # Versión de Java
+  java_version: 17
+  
+  # Pasos de compilación
+  steps:
+    - activate-ssh-key:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    
+    - git-clone:
+        inputs:
+          - clone_depth: 1
+    
+    - install-missing-android-tools:
+        inputs:
+          - gradlew_path: ./gradlew
+    
+    - change-android-versioncode-and-versionname:
+        inputs:
+          - build_gradle_path: ./app/build.gradle
+    
+    - android-lint:
+        inputs:
+          - project_location: .
+          - module: app
+          - variant: debug
+    
+    - android-build:
+        inputs:
+          - project_location: .
+          - module: app
+          - variant: debug
+    
+    - deploy-to-bitrise-io:
+        inputs:
+          - deploy_path: ./app/build/outputs/apk/debug/app-debug.apk
+
