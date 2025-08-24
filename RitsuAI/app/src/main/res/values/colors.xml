@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colores principales de Ritsu AI -->
+    <color name="ritsu_blue">#1976D2</color>
+    <color name="ritsu_blue_dark">#1565C0</color>
+    <color name="ritsu_blue_light">#E3F2FD</color>
+    
+    <color name="ritsu_pink">#E91E63</color>
+    <color name="ritsu_pink_dark">#C2185B</color>
+    <color name="ritsu_pink_light">#FCE4EC</color>
+    
+    <!-- Colores del avatar -->
+    <color name="skin_tone">#FFDBAC</color>
+    <color name="hair_brown">#8B4513</color>
+    <color name="eye_blue">#4169E1</color>
+    <color name="blush_pink">#FFB6C1</color>
+    
+    <!-- Colores de ropa -->
+    <color name="school_uniform_blue">#000080</color>
+    <color name="school_uniform_white">#FFFFFF</color>
+    <color name="school_tie_red">#DC143C</color>
+    
+    <color name="casual_shirt_colors">#FF6B6B</color>
+    <color name="casual_pants_colors">#2C3E50</color>
+    
+    <color name="elegant_dress_purple">#800080</color>
+    <color name="elegant_dress_black">#000000</color>
+    
+    <color name="summer_light_blue">#87CEEB</color>
+    <color name="summer_peach">#FFE4B5</color>
+    <color name="summer_pink">#FFB6C1</color>
+    
+    <color name="kawaii_pastel_pink">#FFB6C1</color>
+    <color name="kawaii_pastel_purple">#DDA0DD</color>
+    <color name="kawaii_pastel_green">#98FB98</color>
+    
+    <!-- Colores de accesorios -->
+    <color name="gold">#FFD700</color>
+    <color name="silver">#C0C0C0</color>
+    <color name="bow_red">#FF1493</color>
+    
+    <!-- Colores de interfaz -->
+    <color name="background_light">#F5F5F5</color>
+    <color name="background_white">#FFFFFF</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#666666</color>
+    <color name="text_hint">#999999</color>
+    
+    <!-- Colores de estado -->
+    <color name="status_bar_color">#1565C0</color>
+    <color name="navigation_bar_color">#FFFFFF</color>
+    
+    <color name="success_green">#4CAF50</color>
+    <color name="warning_orange">#FF9800</color>
+    <color name="error_red">#F44336</color>
+    
+    <!-- Colores de chat -->
+    <color name="chat_bubble_ritsu">#E3F2FD</color>
+    <color name="chat_bubble_user">#F5F5F5</color>
+    <color name="chat_text_ritsu">#1976D2</color>
+    <color name="chat_text_user">#212121</color>
+    
+    <!-- Colores de botones -->
+    <color name="button_call_green">#4CAF50</color>
+    <color name="button_message_orange">#FF9800</color>
+    <color name="button_clothing_pink">#E91E63</color>
+    
+    <!-- Colores de overlay -->
+    <color name="overlay_background">#80000000</color>
+    <color name="overlay_transparent">#00000000</color>
+    
+    <!-- Colores de animación -->
+    <color name="animation_highlight">#FFEB3B</color>
+    <color name="animation_glow">#00BCD4</color>
+    
+    <!-- Colores de modo especial -->
+    <color name="special_mode_red">#FF5722</color>
+    <color name="special_mode_pink">#FF69B4</color>
+    
+    <!-- Colores de aprendizaje -->
+    <color name="learning_blue">#2196F3</color>
+    <color name="learning_green">#8BC34A</color>
+    <color name="learning_purple">#9C27B0</color>
+    
+    <!-- Colores de evolución -->
+    <color name="evolution_gold">#FFC107</color>
+    <color name="evolution_cyan">#00BCD4</color>
+    <color name="evolution_deep_purple">#673AB7</color>
+    
+</resources>
+

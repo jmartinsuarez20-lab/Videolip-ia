@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema principal de Ritsu AI -->
+    <style name="Theme.RitsuAI" parent="Theme.Material3.DayNight">
+        <!-- Colores primarios inspirados en Ritsu -->
+        <item name="colorPrimary">#1976D2</item>
+        <item name="colorPrimaryVariant">#1565C0</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        
+        <!-- Colores secundarios -->
+        <item name="colorSecondary">#E91E63</item>
+        <item name="colorSecondaryVariant">#C2185B</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        
+        <!-- Colores de fondo -->
+        <item name="android:colorBackground">#F5F5F5</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#212121</item>
+        
+        <!-- Colores de error -->
+        <item name="colorError">#F44336</item>
+        <item name="colorOnError">#FFFFFF</item>
+        
+        <!-- Configuración de la barra de estado -->
+        <item name="android:statusBarColor">@color/status_bar_color</item>
+        <item name="android:windowLightStatusBar">true</item>
+        
+        <!-- Configuración de la barra de navegación -->
+        <item name="android:navigationBarColor">@color/navigation_bar_color</item>
+        
+        <!-- Fuentes y tipografía -->
+        <item name="android:fontFamily">@font/roboto</item>
+        <item name="fontFamily">@font/roboto</item>
+    </style>
+    
+    <!-- Tema para el overlay flotante -->
+    <style name="Theme.RitsuAI.Overlay" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+    </style>
+    
+    <!-- Estilo para botones principales -->
+    <style name="RitsuButton" parent="Widget.Material3.Button">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="backgroundTint">#1976D2</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">@font/roboto_medium</item>
+    </style>
+    
+    <!-- Estilo para botones secundarios -->
+    <style name="RitsuButton.Secondary" parent="RitsuButton">
+        <item name="backgroundTint">#E91E63</item>
+    </style>
+    
+    <!-- Estilo para botones de acción rápida -->
+    <style name="RitsuButton.Quick" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textColor">#1976D2</item>
+        <item name="strokeColor">#1976D2</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="cornerRadius">16dp</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+    
+    <!-- Estilo para campos de texto -->
+    <style name="RitsuEditText" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">#1976D2</item>
+        <item name="boxStrokeWidth">2dp</item>
+        <item name="hintTextColor">#666666</item>
+        <item name="android:textColor">#212121</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+    
+    <!-- Estilo para mensajes de chat -->
+    <style name="ChatMessage">
+        <item name="android:padding">12dp</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">@font/roboto</item>
+    </style>
+    
+    <!-- Estilo para mensajes de Ritsu -->
+    <style name="ChatMessage.Ritsu" parent="ChatMessage">
+        <item name="android:background">@drawable/chat_bubble_ritsu</item>
+        <item name="android:textColor">#1976D2</item>
+        <item name="android:fontFamily">@font/roboto_medium</item>
+    </style>
+    
+    <!-- Estilo para mensajes del usuario -->
+    <style name="ChatMessage.User" parent="ChatMessage">
+        <item name="android:background">@drawable/chat_bubble_user</item>
+        <item name="android:textColor">#212121</item>
+    </style>
+    
+    <!-- Estilo para el avatar -->
+    <style name="AvatarStyle">
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:background">@drawable/avatar_background</item>
+        <item name="android:padding">4dp</item>
+    </style>
+    
+    <!-- Estilo para indicadores de estado -->
+    <style name="StatusIndicator">
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">@font/roboto_medium</item>
+        <item name="android:padding">8dp</item>
+        <item name="android:background">@drawable/status_background</item>
+    </style>
+    
+    <!-- Estilo para estado activo -->
+    <style name="StatusIndicator.Active" parent="StatusIndicator">
+        <item name="android:textColor">#4CAF50</item>
+        <item name="android:drawableStart">@drawable/ic_check_circle</item>
+    </style>
+    
+    <!-- Estilo para estado de advertencia -->
+    <style name="StatusIndicator.Warning" parent="StatusIndicator">
+        <item name="android:textColor">#FF9800</item>
+        <item name="android:drawableStart">@drawable/ic_warning</item>
+    </style>
+    
+    <!-- Estilo para estado de error -->
+    <style name="StatusIndicator.Error" parent="StatusIndicator">
+        <item name="android:textColor">#F44336</item>
+        <item name="android:drawableStart">@drawable/ic_error</item>
+    </style>
+    
+</resources>
+

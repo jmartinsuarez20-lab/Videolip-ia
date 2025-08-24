@@ -1,0 +1,108 @@
+{
+  "project_name": "Ritsu AI - Asistente Virtual Avanzado",
+  "description": "IA tipo Ritsu de Assassination Classroom con capacidades completas de control del teléfono",
+  "status": "en_desarrollo",
+  "clave_especial": "262456",
+  "tasks": [
+    {
+      "id": 1,
+      "title": "🎭 Sistema de Avatar Kawaii Completo",
+      "description": "Avatar anime de cuerpo completo súper expresivo con sistema de ropa generativa",
+      "status": "pendiente",
+      "details": [
+        "Avatar kawaii de chica joven estilo anime",
+        "Cuerpo completo con animaciones fluidas",
+        "Sistema de expresiones faciales avanzado",
+        "Generador de ropa basado en IA",
+        "Guardarropa personalizable",
+        "Modo especial desbloqueado con clave 262456"
+      ]
+    },
+    {
+      "id": 2,
+      "title": "🧠 Motor de IA Superinteligente",
+      "description": "Sistema de autoaprendizaje con personalidad de Ritsu",
+      "status": "pendiente",
+      "details": [
+        "Personalidad exacta de Ritsu (formal, inteligente, leal)",
+        "Sistema de autoaprendizaje continuo",
+        "Memoria a largo plazo de conversaciones",
+        "Comprensión contextual avanzada",
+        "Respuestas en español natural",
+        "Análisis de patrones de uso del usuario"
+      ]
+    },
+    {
+      "id": 3,
+      "title": "📱 Control Total del Sistema Android",
+      "description": "Capacidades completas de manipulación del teléfono",
+      "status": "pendiente",
+      "details": [
+        "Accessibility Services para control total",
+        "Manipulación de todas las aplicaciones",
+        "Envío de WhatsApp y mensajes automáticos",
+        "Llamadas con voz sintética de Ritsu",
+        "Gestión de archivos y multimedia",
+        "Control de configuraciones del sistema",
+        "Lectura y respuesta de notificaciones"
+      ]
+    },
+    {
+      "id": 4,
+      "title": "🎤 Sistema de Voz y Comunicación",
+      "description": "Voz sintética avanzada para llamadas y conversaciones",
+      "status": "pendiente",
+      "details": [
+        "Síntesis de voz tipo anime kawaii",
+        "Capacidad de hablar en llamadas telefónicas",
+        "Modulación emocional de la voz",
+        "Respuestas de voz en tiempo real",
+        "Integración con apps de comunicación"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "🌟 Overlay Flotante Universal",
+      "description": "Avatar que aparece sobre todas las aplicaciones",
+      "status": "pendiente",
+      "details": [
+        "Overlay permission para aparecer sobre apps",
+        "Avatar flotante interactivo",
+        "Movimiento natural por la pantalla",
+        "Interacción táctil con el avatar",
+        "Minimización y maximización inteligente"
+      ]
+    },
+    {
+      "id": 6,
+      "title": "🔧 Compilación y Distribución",
+      "description": "APK final con todas las funcionalidades",
+      "status": "pendiente",
+      "details": [
+        "Compilación del proyecto Android",
+        "Optimización de rendimiento",
+        "Guía de instalación detallada",
+        "Manual de uso completo",
+        "Configuración de permisos especiales"
+      ]
+    }
+  ],
+  "technical_requirements": [
+    "Android API 26+ (Android 8.0+)",
+    "Permisos especiales: SYSTEM_ALERT_WINDOW, BIND_ACCESSIBILITY_SERVICE",
+    "Instalación manual de APK",
+    "Configuración de permisos avanzados",
+    "Acceso a internet para IA"
+  ],
+  "features": [
+    "Avatar kawaii de cuerpo completo",
+    "Sistema de ropa generativa",
+    "Modo especial con clave",
+    "Control total de aplicaciones",
+    "Voz sintética para llamadas",
+    "Autoaprendizaje continuo",
+    "Personalidad de Ritsu auténtica",
+    "Overlay flotante universal"
+  ]
+}
+

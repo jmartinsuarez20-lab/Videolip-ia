@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Fondo circular redondeado -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M54,54m-54,0a54,54 0,1 1,108 0a54,54 0,1 1,-108 0" />
+    
+    <!-- Cara de Ritsu -->
+    <path
+        android:fillColor="#FFDBAC"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
+    
+    <!-- Cabello -->
+    <path
+        android:fillColor="#8B4513"
+        android:pathData="M54,24C38,24 25,37 25,53C25,47 29,42 34,39C36,32 44,24 54,24Z" />
+    <path
+        android:fillColor="#8B4513"
+        android:pathData="M54,24C70,24 83,37 83,53C83,47 79,42 74,39C72,32 64,24 54,24Z" />
+    
+    <!-- Ojos kawaii -->
+    <circle
+        android:fillColor="#FFFFFF"
+        android:cx="46"
+        android:cy="50"
+        android:radius="5" />
+    <circle
+        android:fillColor="#FFFFFF"
+        android:cx="62"
+        android:cy="50"
+        android:radius="5" />
+    <circle
+        android:fillColor="#4169E1"
+        android:cx="46"
+        android:cy="50"
+        android:radius="2.5" />
+    <circle
+        android:fillColor="#4169E1"
+        android:cx="62"
+        android:cy="50"
+        android:radius="2.5" />
+    
+    <!-- Sonrisa kawaii -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#000000"
+        android:strokeWidth="1.5"
+        android:pathData="M50,58 Q54,62 58,58" />
+    
+    <!-- Mejillas -->
+    <circle
+        android:fillColor="#FFB6C1"
+        android:cx="38"
+        android:cy="56"
+        android:radius="3"
+        android:alpha="0.7" />
+    <circle
+        android:fillColor="#FFB6C1"
+        android:cx="70"
+        android:cy="56"
+        android:radius="3"
+        android:alpha="0.7" />
+    
+</vector>
+

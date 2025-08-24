@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Fondo circular -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M54,54m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+    
+    <!-- Cara de Ritsu -->
+    <path
+        android:fillColor="#FFDBAC"
+        android:pathData="M54,54m-35,0a35,35 0,1 1,70 0a35,35 0,1 1,-70 0" />
+    
+    <!-- Cabello -->
+    <path
+        android:fillColor="#8B4513"
+        android:pathData="M54,19C35,19 20,34 20,53C20,45 25,38 32,34C35,25 44,19 54,19Z" />
+    <path
+        android:fillColor="#8B4513"
+        android:pathData="M54,19C73,19 88,34 88,53C88,45 83,38 76,34C73,25 64,19 54,19Z" />
+    
+    <!-- Ojos -->
+    <circle
+        android:fillColor="#FFFFFF"
+        android:cx="44"
+        android:cy="48"
+        android:radius="6" />
+    <circle
+        android:fillColor="#FFFFFF"
+        android:cx="64"
+        android:cy="48"
+        android:radius="6" />
+    <circle
+        android:fillColor="#4169E1"
+        android:cx="44"
+        android:cy="48"
+        android:radius="3" />
+    <circle
+        android:fillColor="#4169E1"
+        android:cx="64"
+        android:cy="48"
+        android:radius="3" />
+    
+    <!-- Boca -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#000000"
+        android:strokeWidth="2"
+        android:pathData="M49,58 Q54,63 59,58" />
+    
+    <!-- Mejillas sonrojadas -->
+    <circle
+        android:fillColor="#FFB6C1"
+        android:cx="35"
+        android:cy="55"
+        android:radius="4"
+        android:alpha="0.6" />
+    <circle
+        android:fillColor="#FFB6C1"
+        android:cx="73"
+        android:cy="55"
+        android:radius="4"
+        android:alpha="0.6" />
+    
+</vector>
+

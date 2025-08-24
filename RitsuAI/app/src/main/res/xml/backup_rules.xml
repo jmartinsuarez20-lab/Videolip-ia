@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <include domain="sharedpref" path="ritsu_memory.xml"/>
+    <include domain="sharedpref" path="ritsu_evolution.xml"/>
+    <include domain="database" path="ritsu_database.db"/>
+    <exclude domain="external" path="temp/"/>
+    <exclude domain="external" path="cache/"/>
+</full-backup-content>
+

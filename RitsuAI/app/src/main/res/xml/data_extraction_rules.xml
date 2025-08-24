@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="ritsu_memory.xml"/>
+        <include domain="sharedpref" path="ritsu_evolution.xml"/>
+        <exclude domain="external" path="temp/"/>
+        <exclude domain="external" path="cache/"/>
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="ritsu_memory.xml"/>
+        <include domain="sharedpref" path="ritsu_evolution.xml"/>
+        <include domain="database" path="ritsu_database.db"/>
+    </device-transfer>
+</data-extraction-rules>
+

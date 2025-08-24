@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ritsu AI</string>
+    
+    <!-- Mensajes de bienvenida -->
+    <string name="welcome_message">¡Hola! Soy Ritsu, tu asistente personal inteligente. Estoy aquí para ayudarte con todo lo que necesites en tu teléfono.</string>
+    <string name="setup_complete">¡Configuración completa! Ahora puedo controlar tu teléfono y aparecer sobre todas las aplicaciones.</string>
+    
+    <!-- Mensajes de permisos -->
+    <string name="permission_overlay_title">Permiso de Overlay</string>
+    <string name="permission_overlay_message">Necesito aparecer sobre otras aplicaciones para estar siempre disponible para ti.</string>
+    <string name="permission_accessibility_title">Servicio de Accesibilidad</string>
+    <string name="permission_accessibility_message">Necesito acceso de accesibilidad para controlar aplicaciones y ayudarte con tareas automáticas.</string>
+    <string name="permission_phone_title">Permisos de Teléfono</string>
+    <string name="permission_phone_message">Necesito permisos para hacer llamadas y enviar mensajes por ti.</string>
+    
+    <!-- Mensajes de estado -->
+    <string name="status_configuring">Configurando permisos...</string>
+    <string name="status_ready">✅ Ritsu está lista y configurada</string>
+    <string name="status_partial">⚠️ Configuración parcial - algunas funciones limitadas</string>
+    <string name="status_error">❌ Error en la configuración</string>
+    
+    <!-- Mensajes de chat -->
+    <string name="chat_hint">Escribe algo a Ritsu...</string>
+    <string name="send_button">Enviar</string>
+    <string name="quick_call">📞 Llamar</string>
+    <string name="quick_message">💬 Mensaje</string>
+    <string name="quick_clothing">👗 Ropa</string>
+    
+    <!-- Respuestas de Ritsu -->
+    <string name="ritsu_greeting">¡Buenos días! Soy Ritsu, su asistente personal. ¿En qué puedo ayudarle hoy?</string>
+    <string name="ritsu_ready">Todos mis sistemas están operativos. Estoy lista para asistirle.</string>
+    <string name="ritsu_learning">Estoy aprendiendo de nuestras conversaciones para servirle mejor.</string>
+    <string name="ritsu_evolving">Evolucionando mis capacidades... Ahora soy más inteligente.</string>
+    
+    <!-- Mensajes de error -->
+    <string name="error_no_permission">No tengo los permisos necesarios para realizar esta acción.</string>
+    <string name="error_network">Error de conexión. Verificando conectividad...</string>
+    <string name="error_unknown">Ha ocurrido un error inesperado. Intentando recuperarme...</string>
+    
+    <!-- Notificaciones -->
+    <string name="notification_title">Ritsu AI</string>
+    <string name="notification_text">Ritsu está activa y lista para ayudarte</string>
+    <string name="notification_channel_name">Ritsu AI Overlay</string>
+    <string name="notification_channel_description">Mantiene a Ritsu visible en pantalla</string>
+    
+    <!-- Configuración -->
+    <string name="settings_title">Configuración de Ritsu</string>
+    <string name="settings_voice_enabled">Voz habilitada</string>
+    <string name="settings_auto_learning">Aprendizaje automático</string>
+    <string name="settings_special_mode">Modo especial</string>
+    <string name="settings_avatar_size">Tamaño del avatar</string>
+    
+    <!-- Comandos de voz -->
+    <string name="voice_command_call">llamar a</string>
+    <string name="voice_command_message">enviar mensaje a</string>
+    <string name="voice_command_open">abrir</string>
+    <string name="voice_command_search">buscar</string>
+    <string name="voice_command_clothing">cambiar ropa</string>
+    
+    <!-- Descripciones de ropa -->
+    <string name="clothing_school_uniform">Uniforme escolar clásico</string>
+    <string name="clothing_casual_outfit">Outfit casual cómodo</string>
+    <string name="clothing_elegant_dress">Vestido elegante</string>
+    <string name="clothing_summer_outfit">Ropa fresca de verano</string>
+    <string name="clothing_kawaii_dress">Vestido súper kawaii</string>
+    <string name="clothing_special_outfit">Outfit especial...</string>
+    
+    <!-- Emociones y acciones -->
+    <string name="emotion_happy">feliz</string>
+    <string name="emotion_shy">tímida</string>
+    <string name="emotion_excited">emocionada</string>
+    <string name="emotion_thoughtful">pensativa</string>
+    <string name="emotion_determined">determinada</string>
+    <string name="emotion_focused">concentrada</string>
+    
+    <!-- Mensajes de evolución -->
+    <string name="evolution_level_up">¡He subido de nivel! Ahora soy más inteligente.</string>
+    <string name="evolution_new_capability">He desarrollado una nueva capacidad: %s</string>
+    <string name="evolution_optimization">Optimizando mis sistemas para mejor rendimiento...</string>
+    <string name="evolution_update_available">Hay una actualización disponible. ¿Quieres que me actualice?</string>
+    
+    <!-- Descripción del servicio de accesibilidad -->
+    <string name="accessibility_service_description">Permite a Ritsu AI controlar aplicaciones y realizar tareas automáticas en tu teléfono. Ritsu puede abrir apps, enviar mensajes, hacer llamadas y mucho más para ayudarte en tu día a día.</string>
+    
+</resources>
