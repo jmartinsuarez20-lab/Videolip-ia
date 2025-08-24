@@ -44,6 +44,39 @@ bitrise:
         inputs:
           - clone_depth: 1
     
+    # Script para verificar la estructura del directorio
+    - script:
+        inputs:
+          - content: |
+              #!/bin/bash
+              set -ex
+              
+              # Listar el contenido del directorio raíz
+              echo "Contenido del directorio raíz:"
+              ls -la
+              
+              # Verificar si existe el directorio RitsuAI
+              if [ -d "RitsuAI" ]; then
+                echo "El directorio RitsuAI existe"
+                cd RitsuAI
+                echo "Contenido del directorio RitsuAI:"
+                ls -la
+                
+                # Verificar si existe el archivo gradlew
+                if [ -f "gradlew" ]; then
+                  echo "El archivo gradlew existe"
+                  chmod +x ./gradlew
+                else
+                  echo "ERROR: El archivo gradlew NO existe en el directorio RitsuAI"
+                fi
+              else
+                echo "ERROR: El directorio RitsuAI NO existe"
+                
+                # Buscar el archivo gradlew en todo el repositorio
+                echo "Buscando el archivo gradlew en todo el repositorio:"
+                find . -name "gradlew" -type f
+              fi
+    
     - install-missing-android-tools:
         inputs:
           - gradlew_path: ./gradlew
@@ -67,4 +100,60 @@ bitrise:
     - deploy-to-bitrise-io:
         inputs:
           - deploy_path: ./app/build/outputs/apk/debug/app-debug.apk
+
+# Configuración para TeamCity
+teamcity:
+  # Versión de Android SDK
+  android_sdk: 34
+  
+  # Versión de Java
+  java_version: 17
+  
+  # Pasos de compilación
+  steps:
+    # Verificar estructura del directorio
+    - name: "Verificar estructura del directorio"
+      type: "script"
+      script: |
+        #!/bin/bash
+        set -ex
+        
+        # Listar el contenido del directorio raíz
+        echo "Contenido del directorio raíz:"
+        ls -la
+        
+        # Verificar si existe el directorio RitsuAI
+        if [ -d "RitsuAI" ]; then
+          echo "El directorio RitsuAI existe"
+          cd RitsuAI
+          echo "Contenido del directorio RitsuAI:"
+          ls -la
+          
+          # Verificar si existe el archivo gradlew
+          if [ -f "gradlew" ]; then
+            echo "El archivo gradlew existe"
+            chmod +x ./gradlew
+          else
+            echo "ERROR: El archivo gradlew NO existe en el directorio RitsuAI"
+          fi
+        else
+          echo "ERROR: El directorio RitsuAI NO existe"
+          
+          # Buscar el archivo gradlew en todo el repositorio
+          echo "Buscando el archivo gradlew en todo el repositorio:"
+          find . -name "gradlew" -type f
+        fi
+    
+    # Compilar APK
+    - name: "Compilar APK"
+      type: "gradle"
+      gradle_tasks: "clean assembleDebug"
+      gradle_wrapper: "RitsuAI/gradlew"
+      working_directory: "."
+    
+    # Publicar artefactos
+    - name: "Publicar artefactos"
+      type: "artifact"
+      path: "RitsuAI/app/build/outputs/apk/debug/app-debug.apk"
+      artifact_name: "app-debug"
 
