@@ -8,76 +8,58 @@
     
     <!-- Permisos para overlay flotante -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     
-    <!-- Permisos para control del teléfono -->
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-    <uses-permission android:name="android.permission.SEND_SMS" />
-    <uses-permission android:name="android.permission.READ_SMS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    
-    <!-- Permisos para acceso a contactos -->
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
-    
-    <!-- Permisos para archivos -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" 
-        tools:ignore="ScopedStorage" />
+    <!-- Permisos para accesibilidad -->
+    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
     
     <!-- Permisos para notificaciones -->
-    <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    
-    <!-- Permisos para accessibility service -->
-    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     
     <!-- Permisos para audio -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     
-    <!-- Permisos para vibración -->
-    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Permisos para almacenamiento -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
     
-    <!-- Permisos para instalación de APKs -->
+    <!-- Permisos para actualizaciones automáticas -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-
+    
     <application
         android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
         android:icon="@drawable/ritsu_icon"
-        android:label="@string/app_name"
         android:roundIcon="@drawable/ritsu_icon_round"
+        android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.RitsuAI"
-        android:requestLegacyExternalStorage="true"
-        tools:targetApi="31">
-
-        <!-- Actividad principal -->
+        android:theme="@style/Theme.RitsuAI">
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.RitsuAI">
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- Servicio de overlay flotante -->
+        
+        <!-- Servicio de overlay para el avatar flotante -->
         <service
             android:name=".services.RitsuOverlayService"
             android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="mediaProjection" />
-
-        <!-- Servicio de accessibility -->
+            android:exported="false" />
+        
+        <!-- Servicio de accesibilidad para control de aplicaciones -->
         <service
             android:name=".services.RitsuAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
@@ -85,24 +67,8 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
-
-        <!-- Servicio de notificaciones -->
-        <service
-            android:name=".services.RitsuNotificationService"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
-
-        <!-- Servicio de IA -->
-        <service
-            android:name=".services.RitsuAIService"
-            android:enabled="true"
-            android:exported="false" />
-
-        <!-- FileProvider para actualizaciones -->
+        
+        <!-- FileProvider para instalación de actualizaciones -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -112,7 +78,17 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-
+        
+        <!-- Receptor para inicio automático -->
+        <receiver
+            android:name=".receivers.BootCompletedReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        
     </application>
 
 </manifest>

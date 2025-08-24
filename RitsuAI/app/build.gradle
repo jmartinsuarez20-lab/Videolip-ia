@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace 'com.ritsuai'
-    compileSdk 34
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.ritsuai"
         minSdk 26
-        targetSdk 34
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
@@ -26,12 +26,12 @@ android {
     }
     
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
     
     buildFeatures {
@@ -62,9 +62,6 @@ dependencies {
     implementation 'androidx.room:room-ktx:2.5.0'
     kapt 'androidx.room:room-compiler:2.5.0'
     
-    // Para síntesis de voz
-    implementation 'androidx.speech:speech:1.0.0'
-    
     // Para procesamiento de imágenes del avatar
     implementation 'com.github.bumptech.glide:glide:4.15.1'
     
@@ -75,8 +72,8 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1'
     
     // Para ViewModel y LiveData
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
-    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.6.1'
     
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

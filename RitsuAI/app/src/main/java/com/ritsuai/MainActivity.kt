@@ -7,279 +7,249 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.widget.*
+import android.util.Log
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.ritsuai.services.RitsuAccessibilityService
+import com.ritsuai.databinding.ActivityMainBinding
 import com.ritsuai.services.RitsuOverlayService
-import kotlinx.coroutines.*
 
-/**
- * Actividad principal de Ritsu AI
- * Maneja la configuración inicial, permisos y la interfaz de usuario
- */
 class MainActivity : AppCompatActivity() {
+
+    private val TAG = "MainActivity"
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var ritsuAICore: RitsuAICore
     
-    private lateinit var ritsuCore: RitsuAICore
-    private lateinit var chatEditText: EditText
-    private lateinit var chatScrollView: ScrollView
-    private lateinit var chatContainer: LinearLayout
-    private lateinit var sendButton: Button
-    private lateinit var statusTextView: TextView
-    private lateinit var avatarImageView: ImageView
-    
-    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    
-    companion object {
-        private const val PERMISSION_REQUEST_CODE = 1001
-        private const val OVERLAY_PERMISSION_REQUEST_CODE = 1002
-        private const val ACCESSIBILITY_PERMISSION_REQUEST_CODE = 1003
-    }
+    // Códigos de solicitud para permisos
+    private val OVERLAY_PERMISSION_REQUEST_CODE = 1001
+    private val ACCESSIBILITY_PERMISSION_REQUEST_CODE = 1002
+    private val AUDIO_PERMISSION_REQUEST_CODE = 1003
+    private val STORAGE_PERMISSION_REQUEST_CODE = 1004
+    private val INSTALL_PACKAGES_PERMISSION_REQUEST_CODE = 1005
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         
-        initializeViews()
-        initializeRitsu()
-        checkAndRequestPermissions()
-        setupChatInterface()
+        // Inicializar el núcleo de Ritsu
+        ritsuAICore = RitsuAICore(applicationContext)
+        
+        // Configurar botones
+        setupButtons()
+        
+        // Verificar permisos necesarios
+        checkRequiredPermissions()
     }
     
-    private fun initializeViews() {
-        chatEditText = findViewById(R.id.chatEditText)
-        chatScrollView = findViewById(R.id.chatScrollView)
-        chatContainer = findViewById(R.id.chatContainer)
-        sendButton = findViewById(R.id.sendButton)
-        statusTextView = findViewById(R.id.statusTextView)
-        avatarImageView = findViewById(R.id.avatarImageView)
-    }
-    
-    private fun initializeRitsu() {
-        ritsuCore = RitsuAICore(this)
-        
-        // Mostrar mensaje de bienvenida
-        scope.launch {
-            val welcomeResponse = ritsuCore.processInput("Hola Ritsu, preséntate", "user")
-            addChatMessage("Ritsu", welcomeResponse.text, true)
-            
-            if (welcomeResponse.voiceEnabled) {
-                ritsuCore.speak(welcomeResponse.text)
-            }
-        }
-        
-        updateAvatarDisplay()
-    }
-    
-    private fun checkAndRequestPermissions() {
-        val permissions = mutableListOf<String>()
-        
-        // Permisos básicos
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.CALL_PHONE)
-        }
-        
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.SEND_SMS)
-        }
-        
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.READ_CONTACTS)
-        }
-        
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.RECORD_AUDIO)
-        }
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                permissions.add(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-        
-        if (permissions.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, permissions.toTypedArray(), PERMISSION_REQUEST_CODE)
-        } else {
-            checkSpecialPermissions()
-        }
-    }
-    
-    private fun checkSpecialPermissions() {
-        // Verificar permiso de overlay
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(this)) {
+    private fun setupButtons() {
+        // Botón para iniciar el servicio de overlay
+        binding.btnStartRitsu.setOnClickListener {
+            if (checkOverlayPermission()) {
+                startRitsuService()
+            } else {
                 requestOverlayPermission()
-                return
             }
         }
         
-        // Verificar servicio de accesibilidad
-        if (!isAccessibilityServiceEnabled()) {
-            requestAccessibilityPermission()
-            return
+        // Botón para detener el servicio
+        binding.btnStopRitsu.setOnClickListener {
+            stopRitsuService()
         }
         
-        // Todos los permisos concedidos
-        onAllPermissionsGranted()
+        // Botón para configuración
+        binding.btnSettings.setOnClickListener {
+            // Aquí iría la navegación a la pantalla de configuración
+            Toast.makeText(this, "Configuración de Ritsu", Toast.LENGTH_SHORT).show()
+        }
+        
+        // Botón para verificar actualizaciones
+        binding.btnCheckUpdates.setOnClickListener {
+            Toast.makeText(this, "Verificando actualizaciones...", Toast.LENGTH_SHORT).show()
+            // Aquí iría la lógica para verificar actualizaciones
+        }
     }
+    
+    private fun checkRequiredPermissions() {
+        // Verificar permiso de overlay
+        if (!checkOverlayPermission()) {
+            requestOverlayPermission()
+        }
+        
+        // Verificar permiso de audio
+        if (!checkAudioPermission()) {
+            requestAudioPermission()
+        }
+        
+        // Verificar permiso de almacenamiento
+        if (!checkStoragePermission()) {
+            requestStoragePermission()
+        }
+        
+        // Verificar permiso de instalación de paquetes
+        if (!checkInstallPackagesPermission()) {
+            requestInstallPackagesPermission()
+        }
+    }
+    
+    // Métodos para verificar permisos
+    
+    private fun checkOverlayPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(this)
+        } else {
+            true
+        }
+    }
+    
+    private fun checkAudioPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+    
+    private fun checkStoragePermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Environment.isExternalStorageManager()
+        } else {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+    
+    private fun checkInstallPackagesPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            packageManager.canRequestPackageInstalls()
+        } else {
+            true
+        }
+    }
+    
+    // Métodos para solicitar permisos
     
     private fun requestOverlayPermission() {
-        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-            data = Uri.parse("package:$packageName")
-        }
-        startActivityForResult(intent, OVERLAY_PERMISSION_REQUEST_CODE)
-        
-        Toast.makeText(this, "Por favor, permite que Ritsu aparezca sobre otras aplicaciones", Toast.LENGTH_LONG).show()
-    }
-    
-    private fun requestAccessibilityPermission() {
-        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-        startActivityForResult(intent, ACCESSIBILITY_PERMISSION_REQUEST_CODE)
-        
-        Toast.makeText(this, "Por favor, activa el servicio de accesibilidad de Ritsu", Toast.LENGTH_LONG).show()
-    }
-    
-    private fun isAccessibilityServiceEnabled(): Boolean {
-        val accessibilityEnabled = Settings.Secure.getInt(
-            contentResolver,
-            Settings.Secure.ACCESSIBILITY_ENABLED,
-            0
-        )
-        
-        if (accessibilityEnabled == 1) {
-            val services = Settings.Secure.getString(
-                contentResolver,
-                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
             )
-            return services?.contains("${packageName}/${RitsuAccessibilityService::class.java.name}") == true
-        }
-        
-        return false
-    }
-    
-    private fun onAllPermissionsGranted() {
-        statusTextView.text = "✅ Ritsu está completamente configurada y lista"
-        
-        // Iniciar servicios
-        startRitsuServices()
-        
-        // Mostrar mensaje de confirmación
-        scope.launch {
-            val response = ritsuCore.processInput("Todos los permisos concedidos, estoy lista", "system")
-            addChatMessage("Ritsu", response.text, true)
-            ritsuCore.speak(response.text)
+            startActivityForResult(intent, OVERLAY_PERMISSION_REQUEST_CODE)
         }
     }
     
-    private fun startRitsuServices() {
-        // Iniciar servicio de overlay
-        val overlayIntent = Intent(this, RitsuOverlayService::class.java)
-        startForegroundService(overlayIntent)
-        
-        Toast.makeText(this, "Ritsu ahora vive en tu teléfono ✨", Toast.LENGTH_SHORT).show()
+    private fun requestAudioPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.RECORD_AUDIO),
+            AUDIO_PERMISSION_REQUEST_CODE
+        )
     }
     
-    private fun setupChatInterface() {
-        sendButton.setOnClickListener {
-            val message = chatEditText.text.toString().trim()
-            if (message.isNotEmpty()) {
-                sendMessage(message)
-                chatEditText.text.clear()
-            }
-        }
-        
-        chatEditText.setOnEditorActionListener { _, _, _ ->
-            val message = chatEditText.text.toString().trim()
-            if (message.isNotEmpty()) {
-                sendMessage(message)
-                chatEditText.text.clear()
-                true
-            } else {
-                false
-            }
-        }
-    }
-    
-    private fun sendMessage(message: String) {
-        // Agregar mensaje del usuario
-        addChatMessage("Tú", message, false)
-        
-        // Procesar con Ritsu
-        scope.launch {
+    private fun requestStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             try {
-                val response = ritsuCore.processInput(message, "user")
-                
-                // Agregar respuesta de Ritsu
-                addChatMessage("Ritsu", response.text, true)
-                
-                // Actualizar avatar si hay cambios
-                response.avatarChange?.let { outfit ->
-                    RitsuOverlayService.instance?.changeClothing(outfit)
-                    updateAvatarDisplay()
-                }
-                
-                // Ejecutar acción de teléfono si es necesaria
-                response.phoneAction?.let { action ->
-                    executePhoneAction(action)
-                }
-                
-                // Hablar si está habilitado
-                if (response.voiceEnabled) {
-                    ritsuCore.speak(response.text)
-                }
-                
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.addCategory("android.intent.category.DEFAULT")
+                intent.data = Uri.parse("package:$packageName")
+                startActivityForResult(intent, STORAGE_PERMISSION_REQUEST_CODE)
             } catch (e: Exception) {
-                addChatMessage("Sistema", "Error: ${e.message}", false)
+                val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                startActivityForResult(intent, STORAGE_PERMISSION_REQUEST_CODE)
             }
-        }
-    }
-    
-    private fun addChatMessage(sender: String, message: String, isRitsu: Boolean) {
-        val messageView = TextView(this).apply {
-            text = "$sender: $message"
-            textSize = 16f
-            setPadding(16, 8, 16, 8)
-            
-            if (isRitsu) {
-                setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.holo_blue_dark))
-                setBackgroundColor(ContextCompat.getColor(this@MainActivity, android.R.color.holo_blue_light))
-            } else {
-                setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.black))
-                setBackgroundColor(ContextCompat.getColor(this@MainActivity, android.R.color.white))
-            }
-        }
-        
-        chatContainer.addView(messageView)
-        
-        // Scroll hacia abajo
-        chatScrollView.post {
-            chatScrollView.fullScroll(ScrollView.FOCUS_DOWN)
-        }
-    }
-    
-    private fun updateAvatarDisplay() {
-        scope.launch(Dispatchers.IO) {
-            val avatarManager = RitsuAvatarManager(this@MainActivity)
-            val avatarBitmap = avatarManager.generateAvatarBitmap()
-            
-            withContext(Dispatchers.Main) {
-                avatarImageView.setImageBitmap(avatarBitmap)
-            }
-        }
-    }
-    
-    private suspend fun executePhoneAction(action: PhoneAction) {
-        val phoneControlManager = PhoneControlManager(this)
-        val result = phoneControlManager.executeAction(action)
-        
-        val resultMessage = if (result.success) {
-            "✅ ${result.message}"
         } else {
-            "❌ ${result.message}"
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ),
+                STORAGE_PERMISSION_REQUEST_CODE
+            )
         }
+    }
+    
+    private fun requestInstallPackagesPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+            intent.data = Uri.parse("package:$packageName")
+            startActivityForResult(intent, INSTALL_PACKAGES_PERMISSION_REQUEST_CODE)
+        }
+    }
+    
+    // Métodos para iniciar/detener el servicio
+    
+    private fun startRitsuService() {
+        if (checkOverlayPermission()) {
+            val intent = Intent(this, RitsuOverlayService::class.java)
+            startService(intent)
+            binding.btnStartRitsu.isEnabled = false
+            binding.btnStopRitsu.isEnabled = true
+        } else {
+            Toast.makeText(
+                this,
+                "Se requiere permiso para mostrar sobre otras aplicaciones",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+    
+    private fun stopRitsuService() {
+        val intent = Intent(this, RitsuOverlayService::class.java)
+        stopService(intent)
+        binding.btnStartRitsu.isEnabled = true
+        binding.btnStopRitsu.isEnabled = false
+    }
+    
+    // Manejo de resultados de permisos
+    
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
         
-        addChatMessage("Sistema", resultMessage, false)
+        when (requestCode) {
+            OVERLAY_PERMISSION_REQUEST_CODE -> {
+                if (checkOverlayPermission()) {
+                    Log.d(TAG, "Permiso de overlay concedido")
+                    startRitsuService()
+                } else {
+                    Log.d(TAG, "Permiso de overlay denegado")
+                    showPermissionExplanationDialog(
+                        "Permiso necesario",
+                        "Ritsu necesita permiso para aparecer sobre otras aplicaciones"
+                    )
+                }
+            }
+            ACCESSIBILITY_PERMISSION_REQUEST_CODE -> {
+                Log.d(TAG, "Resultado de permiso de accesibilidad")
+                // La verificación de este permiso es más compleja y se maneja de otra manera
+            }
+            STORAGE_PERMISSION_REQUEST_CODE -> {
+                if (checkStoragePermission()) {
+                    Log.d(TAG, "Permiso de almacenamiento concedido")
+                } else {
+                    Log.d(TAG, "Permiso de almacenamiento denegado")
+                    showPermissionExplanationDialog(
+                        "Permiso necesario",
+                        "Ritsu necesita acceso al almacenamiento para guardar datos"
+                    )
+                }
+            }
+            INSTALL_PACKAGES_PERMISSION_REQUEST_CODE -> {
+                if (checkInstallPackagesPermission()) {
+                    Log.d(TAG, "Permiso de instalación de paquetes concedido")
+                } else {
+                    Log.d(TAG, "Permiso de instalación de paquetes denegado")
+                    showPermissionExplanationDialog(
+                        "Permiso necesario",
+                        "Ritsu necesita permiso para instalar actualizaciones"
+                    )
+                }
+            }
+        }
     }
     
     override fun onRequestPermissionsResult(
@@ -290,53 +260,37 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         
         when (requestCode) {
-            PERMISSION_REQUEST_CODE -> {
-                val allGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-                if (allGranted) {
-                    checkSpecialPermissions()
+            AUDIO_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "Permiso de audio concedido")
                 } else {
-                    statusTextView.text = "⚠️ Algunos permisos son necesarios para el funcionamiento completo"
-                    Toast.makeText(this, "Ritsu necesita todos los permisos para funcionar correctamente", Toast.LENGTH_LONG).show()
+                    Log.d(TAG, "Permiso de audio denegado")
+                    showPermissionExplanationDialog(
+                        "Permiso necesario",
+                        "Ritsu necesita acceso al micrófono para escuchar tus comandos"
+                    )
                 }
             }
         }
     }
     
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        
-        when (requestCode) {
-            OVERLAY_PERMISSION_REQUEST_CODE -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
-                    checkSpecialPermissions()
-                } else {
-                    statusTextView.text = "⚠️ Permiso de overlay requerido"
-                }
+    private fun showPermissionExplanationDialog(title: String, message: String) {
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Configuración") { _, _ ->
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                val uri = Uri.fromParts("package", packageName, null)
+                intent.data = uri
+                startActivity(intent)
             }
-            
-            ACCESSIBILITY_PERMISSION_REQUEST_CODE -> {
-                if (isAccessibilityServiceEnabled()) {
-                    checkSpecialPermissions()
-                } else {
-                    statusTextView.text = "⚠️ Servicio de accesibilidad requerido"
-                }
-            }
-        }
-    }
-    
-    override fun onResume() {
-        super.onResume()
-        
-        // Verificar estado de permisos
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this) && isAccessibilityServiceEnabled()) {
-            statusTextView.text = "✅ Ritsu está completamente configurada"
-        }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
     
     override fun onDestroy() {
         super.onDestroy()
-        scope.cancel()
-        ritsuCore.cleanup()
+        ritsuAICore.destroy()
     }
 }
 

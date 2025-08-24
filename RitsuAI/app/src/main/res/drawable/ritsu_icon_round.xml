@@ -24,26 +24,18 @@
         android:pathData="M54,24C70,24 83,37 83,53C83,47 79,42 74,39C72,32 64,24 54,24Z" />
     
     <!-- Ojos kawaii -->
-    <circle
+    <path
         android:fillColor="#FFFFFF"
-        android:cx="46"
-        android:cy="50"
-        android:radius="5" />
-    <circle
+        android:pathData="M46,50m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    <path
         android:fillColor="#FFFFFF"
-        android:cx="62"
-        android:cy="50"
-        android:radius="5" />
-    <circle
+        android:pathData="M62,50m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    <path
         android:fillColor="#4169E1"
-        android:cx="46"
-        android:cy="50"
-        android:radius="2.5" />
-    <circle
+        android:pathData="M46,50m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0" />
+    <path
         android:fillColor="#4169E1"
-        android:cx="62"
-        android:cy="50"
-        android:radius="2.5" />
+        android:pathData="M62,50m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0" />
     
     <!-- Sonrisa kawaii -->
     <path
@@ -53,17 +45,13 @@
         android:pathData="M50,58 Q54,62 58,58" />
     
     <!-- Mejillas -->
-    <circle
+    <path
         android:fillColor="#FFB6C1"
-        android:cx="38"
-        android:cy="56"
-        android:radius="3"
+        android:pathData="M38,56m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
         android:alpha="0.7" />
-    <circle
+    <path
         android:fillColor="#FFB6C1"
-        android:cx="70"
-        android:cy="56"
-        android:radius="3"
+        android:pathData="M70,56m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
         android:alpha="0.7" />
     
 </vector>

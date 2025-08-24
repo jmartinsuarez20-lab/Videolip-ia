@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/accessibility_service_description"
     android:accessibilityEventTypes="typeAllMask"
-    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagReportViewIds"
-    android:accessibilityFeedbackType="feedbackSpoken|feedbackHaptic|feedbackAudible|feedbackVisual|feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagReportViewIds|flagRetrieveInteractiveWindows|flagRequestTouchExplorationMode"
+    android:accessibilityFeedbackType="feedbackSpoken|feedbackVisual|feedbackGeneric"
+    android:notificationTimeout="100"
     android:canRetrieveWindowContent="true"
-    android:canRequestTouchExplorationMode="true"
-    android:canRequestEnhancedWebAccessibility="true"
     android:canRequestFilterKeyEvents="true"
     android:canPerformGestures="true"
-    android:description="@string/accessibility_service_description"
-    android:settingsActivity="com.ritsuai.AccessibilitySettingsActivity" />
+    android:settingsActivity="com.ritsuai.settings.AccessibilitySettingsActivity" />
 
