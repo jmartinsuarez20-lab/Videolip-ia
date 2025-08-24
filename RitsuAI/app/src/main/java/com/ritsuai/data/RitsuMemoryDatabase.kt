@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 
 /**
  * Base de datos para almacenar las memorias de Ritsu
  */
 @Database(entities = [RitsuMemory::class], version = 1, exportSchema = false)
+@TypeConverters(DateConverter::class)
 abstract class RitsuMemoryDatabase : RoomDatabase() {
     
     abstract fun ritsuMemoryDao(): RitsuMemoryDao
@@ -26,6 +28,7 @@ abstract class RitsuMemoryDatabase : RoomDatabase() {
                 )
                 .fallbackToDestructiveMigration()
                 .build()
+                
                 INSTANCE = instance
                 instance
             }

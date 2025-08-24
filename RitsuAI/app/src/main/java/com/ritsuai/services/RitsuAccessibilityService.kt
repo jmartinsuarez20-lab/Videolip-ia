@@ -10,29 +10,40 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.annotation.RequiresApi
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.ritsuai.RitsuAICore
 
 /**
- * Servicio de accesibilidad que permite a Ritsu controlar otras aplicaciones
+ * Servicio de accesibilidad para controlar el dispositivo
  */
 class RitsuAccessibilityService : AccessibilityService() {
 
     private val TAG = "RitsuAccessibility"
-    private val serviceScope = CoroutineScope(Dispatchers.IO)
+    private var ritsuAICore: RitsuAICore? = null
+    
+    override fun onCreate() {
+        super.onCreate()
+        Log.d(TAG, "Servicio de accesibilidad creado")
+    }
+    
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        Log.d(TAG, "Servicio de accesibilidad conectado")
+        
+        // Inicializar el núcleo de Ritsu
+        ritsuAICore = RitsuAICore(applicationContext)
+    }
     
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         // Procesar eventos de accesibilidad
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                Log.d(TAG, "Ventana cambiada: ${event.className}")
-            }
-            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                // Contenido de la ventana cambiado
+                Log.d(TAG, "Cambio de ventana: ${event.className}")
             }
             AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                Log.d(TAG, "Vista clickeada: ${event.className}")
+                Log.d(TAG, "Click en vista: ${event.className}")
+            }
+            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
+                Log.d(TAG, "Notificación: ${event.text}")
             }
         }
     }
@@ -41,55 +52,124 @@ class RitsuAccessibilityService : AccessibilityService() {
         Log.d(TAG, "Servicio de accesibilidad interrumpido")
     }
     
-    override fun onServiceConnected() {
-        super.onServiceConnected()
-        Log.d(TAG, "Servicio de accesibilidad conectado")
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "Servicio de accesibilidad destruido")
+        
+        // Liberar recursos
+        ritsuAICore?.destroy()
+        ritsuAICore = null
     }
     
     /**
      * Abre una aplicación por su paquete
      */
     fun openApp(packageName: String): Boolean {
-        val intent = packageManager.getLaunchIntentForPackage(packageName)
-        return if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-            true
-        } else {
-            Log.e(TAG, "No se pudo encontrar la aplicación: $packageName")
-            false
+        try {
+            val intent = packageManager.getLaunchIntentForPackage(packageName)
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+                return true
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al abrir aplicación: ${e.message}")
+        }
+        return false
+    }
+    
+    /**
+     * Realiza un clic en una posición específica
+     */
+    @RequiresApi(Build.VERSION_CODES.N)
+    fun performClick(x: Float, y: Float): Boolean {
+        try {
+            val path = Path()
+            path.moveTo(x, y)
+            
+            val gestureBuilder = GestureDescription.Builder()
+            val gesture = gestureBuilder
+                .addStroke(GestureDescription.StrokeDescription(path, 0, 100))
+                .build()
+            
+            return dispatchGesture(gesture, null, null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al realizar clic: ${e.message}")
+            return false
         }
     }
     
     /**
-     * Busca y hace clic en un elemento por su texto
+     * Realiza un deslizamiento
      */
-    fun clickOnElementWithText(text: String): Boolean {
-        val rootNode = rootInActiveWindow ?: return false
-        
-        val node = findNodeByText(rootNode, text)
-        return if (node != null) {
-            performClickOnNode(node)
-            true
-        } else {
-            Log.e(TAG, "No se encontró elemento con texto: $text")
-            false
+    @RequiresApi(Build.VERSION_CODES.N)
+    fun performSwipe(startX: Float, startY: Float, endX: Float, endY: Float, duration: Long = 500): Boolean {
+        try {
+            val path = Path()
+            path.moveTo(startX, startY)
+            path.lineTo(endX, endY)
+            
+            val gestureBuilder = GestureDescription.Builder()
+            val gesture = gestureBuilder
+                .addStroke(GestureDescription.StrokeDescription(path, 0, duration))
+                .build()
+            
+            return dispatchGesture(gesture, null, null)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al realizar deslizamiento: ${e.message}")
+            return false
         }
     }
     
     /**
-     * Busca y hace clic en un elemento por su ID
+     * Busca un nodo por texto
      */
-    fun clickOnElementWithId(viewId: String): Boolean {
-        val rootNode = rootInActiveWindow ?: return false
+    fun findNodeByText(text: String): AccessibilityNodeInfo? {
+        val rootNode = rootInActiveWindow ?: return null
         
-        val node = findNodeById(rootNode, viewId)
-        return if (node != null) {
-            performClickOnNode(node)
-            true
-        } else {
-            Log.e(TAG, "No se encontró elemento con ID: $viewId")
-            false
+        val nodes = ArrayList<AccessibilityNodeInfo>()
+        findNodesByText(rootNode, text, nodes)
+        
+        return if (nodes.isNotEmpty()) nodes[0] else null
+    }
+    
+    /**
+     * Busca nodos por texto recursivamente
+     */
+    private fun findNodesByText(node: AccessibilityNodeInfo, text: String, result: ArrayList<AccessibilityNodeInfo>) {
+        if (node.text != null && node.text.toString().contains(text, ignoreCase = true)) {
+            result.add(node)
+        }
+        
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i)
+            if (child != null) {
+                findNodesByText(child, text, result)
+            }
+        }
+    }
+    
+    /**
+     * Hace clic en un nodo
+     */
+    fun clickOnNode(node: AccessibilityNodeInfo): Boolean {
+        try {
+            return node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al hacer clic en nodo: ${e.message}")
+            
+            // Intentar con coordenadas si falla el método directo
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val rect = Rect()
+                node.getBoundsInScreen(rect)
+                
+                val x = rect.centerX().toFloat()
+                val y = rect.centerY().toFloat()
+                
+                return performClick(x, y)
+            }
+            
+            return false
         }
     }
     
@@ -99,216 +179,74 @@ class RitsuAccessibilityService : AccessibilityService() {
     fun typeText(text: String): Boolean {
         val rootNode = rootInActiveWindow ?: return false
         
-        val editTextNode = findEditTextNode(rootNode)
-        return if (editTextNode != null) {
-            val bundle = android.os.Bundle()
-            bundle.putCharSequence(
-                AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
-                text
-            )
-            editTextNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, bundle)
-            true
-        } else {
-            Log.e(TAG, "No se encontró campo de texto editable")
-            false
+        // Buscar campo de texto enfocado
+        val focusedNode = findFocusedEditText(rootNode)
+        
+        if (focusedNode != null) {
+            val arguments = Bundle()
+            arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+            
+            return focusedNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
         }
+        
+        return false
     }
     
     /**
-     * Realiza un gesto de desplazamiento
+     * Busca un campo de texto enfocado
      */
-    @RequiresApi(Build.VERSION_CODES.N)
-    fun performScroll(direction: ScrollDirection): Boolean {
-        val displayMetrics = resources.displayMetrics
-        val screenHeight = displayMetrics.heightPixels
-        val screenWidth = displayMetrics.widthPixels
+    private fun findFocusedEditText(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        if (node.isEditable && node.isFocused) {
+            return node
+        }
         
-        val path = Path()
-        when (direction) {
-            ScrollDirection.UP -> {
-                path.moveTo(screenWidth / 2f, screenHeight * 0.7f)
-                path.lineTo(screenWidth / 2f, screenHeight * 0.3f)
-            }
-            ScrollDirection.DOWN -> {
-                path.moveTo(screenWidth / 2f, screenHeight * 0.3f)
-                path.lineTo(screenWidth / 2f, screenHeight * 0.7f)
-            }
-            ScrollDirection.LEFT -> {
-                path.moveTo(screenWidth * 0.7f, screenHeight / 2f)
-                path.lineTo(screenWidth * 0.3f, screenHeight / 2f)
-            }
-            ScrollDirection.RIGHT -> {
-                path.moveTo(screenWidth * 0.3f, screenHeight / 2f)
-                path.lineTo(screenWidth * 0.7f, screenHeight / 2f)
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i)
+            if (child != null) {
+                val result = findFocusedEditText(child)
+                if (result != null) {
+                    return result
+                }
             }
         }
         
-        val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, 500))
-            .build()
-        
-        return dispatchGesture(gesture, null, null)
+        return null
     }
     
     /**
-     * Realiza un toque en una posición específica de la pantalla
+     * Presiona el botón Atrás
      */
-    @RequiresApi(Build.VERSION_CODES.N)
-    fun performTap(x: Float, y: Float): Boolean {
-        val path = Path()
-        path.moveTo(x, y)
-        
-        val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, 100))
-            .build()
-        
-        return dispatchGesture(gesture, null, null)
-    }
-    
-    /**
-     * Vuelve a la pantalla anterior
-     */
-    fun goBack(): Boolean {
+    fun performBackButton(): Boolean {
         return performGlobalAction(GLOBAL_ACTION_BACK)
     }
     
     /**
-     * Va a la pantalla de inicio
+     * Presiona el botón Home
      */
-    fun goHome(): Boolean {
+    fun performHomeButton(): Boolean {
         return performGlobalAction(GLOBAL_ACTION_HOME)
     }
     
     /**
-     * Abre el menú de aplicaciones recientes
+     * Abre el selector de aplicaciones recientes
      */
-    fun openRecents(): Boolean {
+    fun performRecentAppsButton(): Boolean {
         return performGlobalAction(GLOBAL_ACTION_RECENTS)
     }
     
     /**
-     * Abre el panel de notificaciones
+     * Abre las notificaciones
      */
-    fun openNotifications(): Boolean {
+    fun performOpenNotifications(): Boolean {
         return performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
     }
     
     /**
-     * Abre los ajustes rápidos
-     */
-    fun openQuickSettings(): Boolean {
-        return performGlobalAction(GLOBAL_ACTION_QUICK_SETTINGS)
-    }
-    
-    /**
-     * Toma una captura de pantalla (requiere Android 10+)
+     * Toma una captura de pantalla
      */
     @RequiresApi(Build.VERSION_CODES.P)
-    fun takeScreenshot() {
-        serviceScope.launch {
-            try {
-                takeScreenshot(
-                    AccessibilityService.TAKE_SCREENSHOT_DISPLAY,
-                    Dispatchers.IO.asExecutor()
-                ) { result ->
-                    if (result != null) {
-                        Log.d(TAG, "Captura de pantalla tomada con éxito")
-                        // Aquí se procesaría la captura
-                        result.bitmap.recycle()
-                    } else {
-                        Log.e(TAG, "Error al tomar captura de pantalla")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error al tomar captura de pantalla: ${e.message}")
-            }
-        }
-    }
-    
-    // Métodos auxiliares para buscar nodos
-    
-    private fun findNodeByText(node: AccessibilityNodeInfo, text: String): AccessibilityNodeInfo? {
-        // Buscar en el nodo actual
-        if (node.text?.contains(text, ignoreCase = true) == true) {
-            return node
-        }
-        
-        // Buscar en los hijos
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            val result = findNodeByText(child, text)
-            if (result != null) {
-                return result
-            }
-            child.recycle()
-        }
-        
-        return null
-    }
-    
-    private fun findNodeById(node: AccessibilityNodeInfo, viewId: String): AccessibilityNodeInfo? {
-        // Buscar por ID
-        val nodes = node.findAccessibilityNodeInfosByViewId(viewId)
-        if (nodes.isNotEmpty()) {
-            val result = nodes[0]
-            for (i in 1 until nodes.size) {
-                nodes[i].recycle()
-            }
-            return result
-        }
-        
-        // Buscar en los hijos
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            val result = findNodeById(child, viewId)
-            if (result != null) {
-                return result
-            }
-            child.recycle()
-        }
-        
-        return null
-    }
-    
-    private fun findEditTextNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-        // Verificar si el nodo actual es un campo de texto editable
-        if (node.isEditable) {
-            return node
-        }
-        
-        // Buscar en los hijos
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            val result = findEditTextNode(child)
-            if (result != null) {
-                return result
-            }
-            child.recycle()
-        }
-        
-        return null
-    }
-    
-    private fun performClickOnNode(node: AccessibilityNodeInfo): Boolean {
-        // Verificar si el nodo es clickeable
-        if (node.isClickable) {
-            return node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-        }
-        
-        // Si no es clickeable, intentar con el padre
-        val parent = node.parent
-        return if (parent != null) {
-            val result = performClickOnNode(parent)
-            parent.recycle()
-            result
-        } else {
-            false
-        }
-    }
-    
-    // Enumeración para direcciones de desplazamiento
-    enum class ScrollDirection {
-        UP, DOWN, LEFT, RIGHT
+    fun takeScreenshot(): Boolean {
+        return performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)
     }
 }
 

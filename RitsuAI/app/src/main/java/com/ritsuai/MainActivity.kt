@@ -113,8 +113,18 @@ class MainActivity : AppCompatActivity() {
     
     private fun checkStoragePermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Environment.isExternalStorageManager()
+            // En Android 11+ usamos el nuevo método
+            try {
+                // Verificar si tenemos acceso a todos los archivos
+                val uri = Uri.parse("content://com.android.externalstorage.documents/tree/primary%3A")
+                val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                contentResolver.takePersistableUriPermission(uri, takeFlags)
+                true
+            } catch (e: Exception) {
+                false
+            }
         } else {
+            // En versiones anteriores usamos el permiso tradicional
             ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE

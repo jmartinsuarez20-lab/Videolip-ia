@@ -4,7 +4,8 @@ import androidx.room.TypeConverter
 import java.util.Date
 
 /**
- * Conversor para manejar fechas en Room
+ * Conversor de tipos para Room
+ * Permite almacenar fechas en la base de datos
  */
 class DateConverter {
     @TypeConverter

@@ -1,14 +1,11 @@
 package com.ritsuai.services
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -16,119 +13,118 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.app.NotificationCompat
 import com.ritsuai.R
 import com.ritsuai.RitsuAICore
+import com.ritsuai.evolution.RitsuAdaptiveAvatar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
- * Servicio que muestra a Ritsu como un overlay flotante en la pantalla
+ * Servicio para mostrar el avatar flotante de Ritsu
  */
 class RitsuOverlayService : Service() {
 
     private val TAG = "RitsuOverlayService"
+    
+    // Administrador de ventanas
     private lateinit var windowManager: WindowManager
+    
+    // Vista del overlay
     private lateinit var overlayView: View
+    
+    // Parámetros de la ventana
+    private lateinit var params: WindowManager.LayoutParams
+    
+    // Núcleo de Ritsu
     private lateinit var ritsuAICore: RitsuAICore
     
-    // Corrutinas
-    private val serviceScope = CoroutineScope(Dispatchers.Main)
-    private var animationJob: Job? = null
+    // Avatar adaptativo
+    private lateinit var adaptiveAvatar: RitsuAdaptiveAvatar
     
-    // ID del canal de notificación
-    private val CHANNEL_ID = "RitsuOverlayChannel"
-    private val NOTIFICATION_ID = 1001
+    // Corrutinas
+    private val serviceScope = CoroutineScope(Dispatchers.Default)
+    private var updateJob: Job? = null
+    
+    // Estado
+    private var initialX: Int = 0
+    private var initialY: Int = 0
+    private var initialTouchX: Float = 0f
+    private var initialTouchY: Float = 0f
     
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG, "Servicio de overlay creado")
+        
+        // Inicializar el administrador de ventanas
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         
         // Inicializar el núcleo de Ritsu
         ritsuAICore = RitsuAICore(applicationContext)
         
-        // Crear canal de notificación para servicio en primer plano
-        createNotificationChannel()
-        
-        // Iniciar servicio en primer plano
-        startForeground(NOTIFICATION_ID, createNotification())
-        
-        // Inicializar el administrador de ventanas
-        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        
-        // Crear y mostrar la vista de overlay
-        setupOverlayView()
+        // Crear la vista del overlay
+        createOverlayView()
     }
     
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Ritsu Overlay Service"
-            val descriptionText = "Muestra a Ritsu como un overlay flotante"
-            val importance = NotificationManager.IMPORTANCE_LOW
-            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-            }
-            
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d(TAG, "Servicio de overlay iniciado")
+        return START_STICKY
     }
     
-    private fun createNotification(): Notification {
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Ritsu está activa")
-            .setContentText("Ritsu está ejecutándose en segundo plano")
-            .setSmallIcon(R.drawable.ic_check_circle)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
+    override fun onBind(intent: Intent?): IBinder? {
+        return null
     }
     
-    private fun setupOverlayView() {
-        // Inflar la vista de overlay
-        val inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        overlayView = inflater.inflate(R.layout.overlay_ritsu, null)
+    /**
+     * Crea la vista del overlay
+     */
+    private fun createOverlayView() {
+        // Inflar la vista
+        overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_ritsu, null)
         
         // Configurar parámetros de la ventana
-        val params = WindowManager.LayoutParams(
+        val layoutFlag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        } else {
+            WindowManager.LayoutParams.TYPE_PHONE
+        }
+        
+        params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            } else {
-                WindowManager.LayoutParams.TYPE_PHONE
-            },
+            layoutFlag,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
             x = 100
-            y = 300
+            y = 100
         }
         
-        // Configurar arrastre de la vista
-        setupDragToMove(overlayView, params)
-        
-        // Configurar interacciones con Ritsu
-        setupRitsuInteractions(overlayView)
+        // Configurar eventos táctiles
+        setupTouchListener()
         
         // Añadir la vista al administrador de ventanas
-        windowManager.addView(overlayView, params)
-        
-        // Iniciar animación de idle
-        startIdleAnimation()
+        try {
+            windowManager.addView(overlayView, params)
+            
+            // Iniciar actualización periódica
+            startPeriodicUpdate()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al añadir vista de overlay: ${e.message}")
+        }
     }
     
-    private fun setupDragToMove(view: View, params: WindowManager.LayoutParams) {
-        var initialX: Int = 0
-        var initialY: Int = 0
-        var initialTouchX: Float = 0f
-        var initialTouchY: Float = 0f
-        
-        view.setOnTouchListener { v, event ->
+    /**
+     * Configura el listener de eventos táctiles
+     */
+    private fun setupTouchListener() {
+        overlayView.setOnTouchListener { view, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    // Guardar posición inicial
                     initialX = params.x
                     initialY = params.y
                     initialTouchX = event.rawX
@@ -136,9 +132,22 @@ class RitsuOverlayService : Service() {
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
+                    // Calcular nueva posición
                     params.x = initialX + (event.rawX - initialTouchX).toInt()
                     params.y = initialY + (event.rawY - initialTouchY).toInt()
+                    
+                    // Actualizar posición
                     windowManager.updateViewLayout(overlayView, params)
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    // Si fue un toque corto (no un arrastre)
+                    val isTap = Math.abs(event.rawX - initialTouchX) < 10 && 
+                               Math.abs(event.rawY - initialTouchY) < 10
+                    
+                    if (isTap) {
+                        handleTap()
+                    }
                     true
                 }
                 else -> false
@@ -146,103 +155,84 @@ class RitsuOverlayService : Service() {
         }
     }
     
-    private fun setupRitsuInteractions(view: View) {
-        val ritsuAvatar = view.findViewById<ImageView>(R.id.ivRitsuAvatar)
-        val ritsuStatus = view.findViewById<TextView>(R.id.tvRitsuStatus)
+    /**
+     * Maneja un toque en el avatar
+     */
+    private fun handleTap() {
+        // Aquí iría la lógica para mostrar el diálogo de chat
+        Log.d(TAG, "Avatar tocado")
         
-        // Configurar clic en el avatar
-        ritsuAvatar.setOnClickListener {
-            // Mostrar diálogo o expandir interfaz
-            ritsuStatus.text = "¿En qué puedo ayudarte?"
-            
-            // Animar respuesta
-            animateResponse()
-        }
+        // Cambiar el estado del avatar
+        val tvStatus = overlayView.findViewById<TextView>(R.id.tvRitsuStatus)
+        tvStatus.text = "¡Hola!"
         
-        // Configurar clic largo en el avatar
-        ritsuAvatar.setOnLongClickListener {
-            // Mostrar menú de opciones
-            ritsuStatus.text = "Menú de opciones"
-            true
-        }
-    }
-    
-    private fun startIdleAnimation() {
-        animationJob?.cancel()
-        animationJob = serviceScope.launch {
-            val ritsuAvatar = overlayView.findViewById<ImageView>(R.id.ivRitsuAvatar)
-            
-            while (true) {
-                // Animación de respiración suave
-                for (i in 0..10) {
-                    val scale = 0.95f + (i * 0.005f)
-                    ritsuAvatar.scaleX = scale
-                    ritsuAvatar.scaleY = scale
-                    delay(100)
-                }
-                
-                for (i in 10 downTo 0) {
-                    val scale = 0.95f + (i * 0.005f)
-                    ritsuAvatar.scaleX = scale
-                    ritsuAvatar.scaleY = scale
-                    delay(100)
-                }
-                
-                // Parpadeo ocasional
-                if (Math.random() > 0.7) {
-                    ritsuAvatar.alpha = 0.7f
-                    delay(100)
-                    ritsuAvatar.alpha = 1.0f
-                }
-                
-                delay(500)
+        // Programar el cambio de vuelta después de un tiempo
+        serviceScope.launch {
+            kotlinx.coroutines.delay(2000)
+            withContext(Dispatchers.Main) {
+                tvStatus.text = "Ritsu"
             }
         }
     }
     
-    private fun animateResponse() {
-        animationJob?.cancel()
-        animationJob = serviceScope.launch {
-            val ritsuAvatar = overlayView.findViewById<ImageView>(R.id.ivRitsuAvatar)
-            
-            // Animación de "pensando"
-            for (i in 0 until 3) {
-                ritsuAvatar.rotation = -5f
-                delay(150)
-                ritsuAvatar.rotation = 5f
-                delay(150)
+    /**
+     * Inicia la actualización periódica del avatar
+     */
+    private fun startPeriodicUpdate() {
+        updateJob = serviceScope.launch {
+            try {
+                while (true) {
+                    // Actualizar cada 5 segundos
+                    kotlinx.coroutines.delay(5000)
+                    
+                    // Actualizar avatar en el hilo principal
+                    withContext(Dispatchers.Main) {
+                        updateAvatarDisplay()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error en actualización periódica: ${e.message}")
             }
-            
-            ritsuAvatar.rotation = 0f
-            
-            // Volver a la animación de idle
-            startIdleAnimation()
         }
     }
     
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
+    /**
+     * Actualiza la visualización del avatar
+     */
+    private fun updateAvatarDisplay() {
+        try {
+            val ivAvatar = overlayView.findViewById<ImageView>(R.id.ivRitsuAvatar)
+            val tvStatus = overlayView.findViewById<TextView>(R.id.tvRitsuStatus)
+            
+            // En una implementación real, aquí se cargaría la imagen del avatar actual
+            // y se actualizaría el estado según la actividad de Ritsu
+            
+            // Por ahora, solo actualizamos el texto de estado con la hora
+            val currentTime = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
+                .format(java.util.Date())
+            
+            tvStatus.text = "Activa: $currentTime"
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al actualizar avatar: ${e.message}")
+        }
     }
     
     override fun onDestroy() {
         super.onDestroy()
+        Log.d(TAG, "Servicio de overlay destruido")
         
-        // Cancelar todas las corrutinas
-        animationJob?.cancel()
+        // Cancelar trabajos en segundo plano
+        updateJob?.cancel()
         
-        // Eliminar la vista de overlay
-        if (::overlayView.isInitialized && ::windowManager.isInitialized) {
+        // Eliminar la vista del administrador de ventanas
+        try {
             windowManager.removeView(overlayView)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al eliminar vista de overlay: ${e.message}")
         }
         
-        // Liberar recursos del núcleo de Ritsu
-        if (::ritsuAICore.isInitialized) {
-            ritsuAICore.destroy()
-        }
-    }
-    
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
+        // Liberar recursos
+        ritsuAICore.destroy()
     }
 }
 

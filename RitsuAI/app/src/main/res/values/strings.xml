@@ -1,47 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Ritsu AI</string>
-    
-    <!-- Descripciones de servicios -->
-    <string name="accessibility_service_description">Permite a Ritsu controlar aplicaciones y realizar acciones en tu dispositivo</string>
-    
-    <!-- Textos de la interfaz principal -->
-    <string name="btn_start_ritsu">Iniciar Ritsu</string>
-    <string name="btn_stop_ritsu">Detener Ritsu</string>
-    <string name="btn_settings">Configuración</string>
-    <string name="btn_check_updates">Buscar actualizaciones</string>
-    
-    <!-- Mensajes de Ritsu -->
-    <string name="ritsu_greeting">¡Hola! Soy Ritsu, tu asistente personal. ¿En qué puedo ayudarte hoy?</string>
-    <string name="ritsu_thinking">Estoy pensando…</string>
-    <string name="ritsu_processing">Procesando tu solicitud…</string>
-    <string name="ritsu_error">Lo siento, ha ocurrido un error. Intentémoslo de nuevo.</string>
-    
-    <!-- Mensajes de permisos -->
-    <string name="permission_overlay_rationale">Necesito permiso para aparecer sobre otras aplicaciones y poder asistirte en cualquier momento.</string>
-    <string name="permission_accessibility_rationale">Necesito permiso de accesibilidad para poder controlar aplicaciones y realizar acciones por ti.</string>
-    <string name="permission_audio_rationale">Necesito permiso para acceder al micrófono para poder escuchar tus comandos de voz.</string>
-    <string name="permission_storage_rationale">Necesito permiso para acceder al almacenamiento para guardar mis datos y configuraciones.</string>
-    
-    <!-- Configuración -->
-    <string name="settings_appearance">Apariencia</string>
-    <string name="settings_behavior">Comportamiento</string>
-    <string name="settings_privacy">Privacidad</string>
-    <string name="settings_advanced">Avanzado</string>
-    <string name="settings_about">Acerca de</string>
-    
-    <!-- Mensajes de evolución -->
-    <string name="evolution_level_up">¡He evolucionado al nivel %1$d! Ahora puedo hacer más cosas para ayudarte.</string>
-    <string name="evolution_new_ability">¡He desbloqueado una nueva habilidad: %1$s!</string>
-    
-    <!-- Mensajes de actualización -->
-    <string name="update_available">Nueva actualización disponible: versión %1$s</string>
-    <string name="update_downloading">Descargando actualización…</string>
-    <string name="update_ready">Actualización lista para instalar</string>
-    <string name="update_installed">Actualización instalada correctamente</string>
-    
-    <!-- Modo especial -->
-    <string name="special_mode_activated">Modo especial activado</string>
-    <string name="special_mode_deactivated">Modo especial desactivado</string>
+    <string name="accessibility_service_description">Ritsu necesita acceso a la accesibilidad para controlar tu dispositivo y ayudarte con tus tareas diarias.</string>
+    <string name="start_ritsu">Iniciar Ritsu</string>
+    <string name="stop_ritsu">Detener Ritsu</string>
+    <string name="settings">Configuración</string>
+    <string name="check_updates">Verificar actualizaciones</string>
+    <string name="welcome_message">¡Bienvenido a Ritsu AI!</string>
+    <string name="welcome_description">Tu asistente personal con capacidad de evolución</string>
 </resources>
 
