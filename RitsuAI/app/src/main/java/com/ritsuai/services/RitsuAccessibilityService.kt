@@ -2,325 +2,313 @@ package com.ritsuai.services
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
+import android.content.Intent
 import android.graphics.Path
+import android.graphics.Rect
+import android.os.Build
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import android.content.Intent
-import android.os.Handler
-import android.os.Looper
-import com.ritsuai.*
-import kotlinx.coroutines.*
+import androidx.annotation.RequiresApi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
- * Servicio de accesibilidad que permite a Ritsu controlar completamente el teléfono
- * Puede interactuar con cualquier aplicación y realizar acciones automáticas
+ * Servicio de accesibilidad que permite a Ritsu controlar otras aplicaciones
  */
 class RitsuAccessibilityService : AccessibilityService() {
+
+    private val TAG = "RitsuAccessibility"
+    private val serviceScope = CoroutineScope(Dispatchers.IO)
     
-    private lateinit var ritsuCore: RitsuAICore
-    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    private val handler = Handler(Looper.getMainLooper())
-    
-    companion object {
-        var instance: RitsuAccessibilityService? = null
-            private set
+    override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        // Procesar eventos de accesibilidad
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                Log.d(TAG, "Ventana cambiada: ${event.className}")
+            }
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                // Contenido de la ventana cambiado
+            }
+            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+                Log.d(TAG, "Vista clickeada: ${event.className}")
+            }
+        }
     }
     
-    override fun onCreate() {
-        super.onCreate()
-        instance = this
-        ritsuCore = RitsuAICore(this)
+    override fun onInterrupt() {
+        Log.d(TAG, "Servicio de accesibilidad interrumpido")
     }
     
     override fun onServiceConnected() {
         super.onServiceConnected()
-        // Ritsu está lista para controlar el teléfono
-        sendBroadcast(Intent("com.ritsuai.ACCESSIBILITY_CONNECTED"))
+        Log.d(TAG, "Servicio de accesibilidad conectado")
     }
     
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        event?.let { processAccessibilityEvent(it) }
-    }
-    
-    override fun onInterrupt() {
-        // Manejar interrupciones del servicio
-    }
-    
-    private fun processAccessibilityEvent(event: AccessibilityEvent) {
-        when (event.eventType) {
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                handleWindowChange(event)
-            }
-            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
-                handleNotification(event)
-            }
-            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                handleViewClick(event)
-            }
-            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> {
-                handleTextChange(event)
-            }
-        }
-    }
-    
-    private fun handleWindowChange(event: AccessibilityEvent) {
-        val packageName = event.packageName?.toString() ?: return
-        val className = event.className?.toString() ?: return
-        
-        // Notificar a Ritsu sobre el cambio de aplicación
-        scope.launch {
-            val response = ritsuCore.processInput(
-                "App cambiada a: $packageName",
-                "system"
-            )
-            // Ritsu puede reaccionar al cambio de app
-        }
-    }
-    
-    private fun handleNotification(event: AccessibilityEvent) {
-        val notificationText = event.text?.joinToString(" ") ?: return
-        
-        // Ritsu puede leer y responder notificaciones
-        scope.launch {
-            val response = ritsuCore.processInput(
-                "Nueva notificación: $notificationText",
-                "system"
-            )
-            
-            if (response.phoneAction != null) {
-                executePhoneAction(response.phoneAction)
-            }
-        }
-    }
-    
-    private fun handleViewClick(event: AccessibilityEvent) {
-        // Ritsu puede aprender de las interacciones del usuario
-        val clickedText = event.text?.joinToString(" ") ?: ""
-        if (clickedText.isNotEmpty()) {
-            scope.launch {
-                ritsuCore.processInput("Usuario hizo clic en: $clickedText", "learning")
-            }
-        }
-    }
-    
-    private fun handleTextChange(event: AccessibilityEvent) {
-        // Ritsu puede ayudar con la escritura
-        val newText = event.text?.joinToString(" ") ?: ""
-        if (newText.length > 50) { // Solo textos largos
-            scope.launch {
-                val response = ritsuCore.processInput(
-                    "¿Puedes ayudarme a mejorar este texto: $newText",
-                    "user"
-                )
-                // Ritsu podría sugerir mejoras
-            }
+    /**
+     * Abre una aplicación por su paquete
+     */
+    fun openApp(packageName: String): Boolean {
+        val intent = packageManager.getLaunchIntentForPackage(packageName)
+        return if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            true
+        } else {
+            Log.e(TAG, "No se pudo encontrar la aplicación: $packageName")
+            false
         }
     }
     
     /**
-     * Ejecuta acciones de teléfono solicitadas por Ritsu
+     * Busca y hace clic en un elemento por su texto
      */
-    private fun executePhoneAction(action: PhoneAction) {
-        when (action.type) {
-            PhoneActionType.CALL -> makeCall(action.target)
-            PhoneActionType.MESSAGE -> sendMessage(action.target, action.content)
-            PhoneActionType.WHATSAPP -> openWhatsApp(action.target, action.content)
-            PhoneActionType.OPEN_APP -> openApp(action.target)
-            else -> { /* Otras acciones */ }
-        }
-    }
-    
-    private fun makeCall(phoneNumber: String) {
-        val callIntent = Intent(Intent.ACTION_CALL).apply {
-            data = android.net.Uri.parse("tel:$phoneNumber")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        startActivity(callIntent)
-    }
-    
-    private fun sendMessage(contact: String, message: String) {
-        // Abrir app de mensajes y escribir automáticamente
-        val smsIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = android.net.Uri.parse("sms:$contact")
-            putExtra("sms_body", message)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        startActivity(smsIntent)
+    fun clickOnElementWithText(text: String): Boolean {
+        val rootNode = rootInActiveWindow ?: return false
         
-        // Después de un delay, hacer clic en enviar automáticamente
-        handler.postDelayed({
-            clickSendButton()
-        }, 2000)
-    }
-    
-    private fun openWhatsApp(contact: String, message: String) {
-        val whatsappIntent = Intent(Intent.ACTION_VIEW).apply {
-            data = android.net.Uri.parse("https://api.whatsapp.com/send?phone=$contact&text=${android.net.Uri.encode(message)}")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        val node = findNodeByText(rootNode, text)
+        return if (node != null) {
+            performClickOnNode(node)
+            true
+        } else {
+            Log.e(TAG, "No se encontró elemento con texto: $text")
+            false
         }
-        startActivity(whatsappIntent)
-        
-        // Auto-enviar después de abrir WhatsApp
-        handler.postDelayed({
-            clickSendButton()
-        }, 3000)
-    }
-    
-    private fun openApp(packageName: String) {
-        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-        launchIntent?.let {
-            it.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            startActivity(it)
-        }
-    }
-    
-    private fun clickSendButton() {
-        val rootNode = rootInActiveWindow ?: return
-        
-        // Buscar botón de enviar en diferentes apps
-        val sendButtons = listOf("Enviar", "Send", "➤", "→")
-        
-        for (buttonText in sendButtons) {
-            val sendButton = findNodeByText(rootNode, buttonText)
-            if (sendButton != null && sendButton.isClickable) {
-                sendButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                break
-            }
-        }
-    }
-    
-    private fun findNodeByText(node: AccessibilityNodeInfo, text: String): AccessibilityNodeInfo? {
-        if (node.text?.toString()?.contains(text, ignoreCase = true) == true) {
-            return node
-        }
-        
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i)
-            child?.let {
-                val result = findNodeByText(it, text)
-                if (result != null) return result
-            }
-        }
-        
-        return null
     }
     
     /**
-     * Permite a Ritsu hacer clic en coordenadas específicas
+     * Busca y hace clic en un elemento por su ID
      */
-    fun performClick(x: Float, y: Float) {
-        val path = Path().apply {
-            moveTo(x, y)
+    fun clickOnElementWithId(viewId: String): Boolean {
+        val rootNode = rootInActiveWindow ?: return false
+        
+        val node = findNodeById(rootNode, viewId)
+        return if (node != null) {
+            performClickOnNode(node)
+            true
+        } else {
+            Log.e(TAG, "No se encontró elemento con ID: $viewId")
+            false
         }
+    }
+    
+    /**
+     * Escribe texto en un campo de texto
+     */
+    fun typeText(text: String): Boolean {
+        val rootNode = rootInActiveWindow ?: return false
+        
+        val editTextNode = findEditTextNode(rootNode)
+        return if (editTextNode != null) {
+            val bundle = android.os.Bundle()
+            bundle.putCharSequence(
+                AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                text
+            )
+            editTextNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, bundle)
+            true
+        } else {
+            Log.e(TAG, "No se encontró campo de texto editable")
+            false
+        }
+    }
+    
+    /**
+     * Realiza un gesto de desplazamiento
+     */
+    @RequiresApi(Build.VERSION_CODES.N)
+    fun performScroll(direction: ScrollDirection): Boolean {
+        val displayMetrics = resources.displayMetrics
+        val screenHeight = displayMetrics.heightPixels
+        val screenWidth = displayMetrics.widthPixels
+        
+        val path = Path()
+        when (direction) {
+            ScrollDirection.UP -> {
+                path.moveTo(screenWidth / 2f, screenHeight * 0.7f)
+                path.lineTo(screenWidth / 2f, screenHeight * 0.3f)
+            }
+            ScrollDirection.DOWN -> {
+                path.moveTo(screenWidth / 2f, screenHeight * 0.3f)
+                path.lineTo(screenWidth / 2f, screenHeight * 0.7f)
+            }
+            ScrollDirection.LEFT -> {
+                path.moveTo(screenWidth * 0.7f, screenHeight / 2f)
+                path.lineTo(screenWidth * 0.3f, screenHeight / 2f)
+            }
+            ScrollDirection.RIGHT -> {
+                path.moveTo(screenWidth * 0.3f, screenHeight / 2f)
+                path.lineTo(screenWidth * 0.7f, screenHeight / 2f)
+            }
+        }
+        
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(path, 0, 500))
+            .build()
+        
+        return dispatchGesture(gesture, null, null)
+    }
+    
+    /**
+     * Realiza un toque en una posición específica de la pantalla
+     */
+    @RequiresApi(Build.VERSION_CODES.N)
+    fun performTap(x: Float, y: Float): Boolean {
+        val path = Path()
+        path.moveTo(x, y)
         
         val gesture = GestureDescription.Builder()
             .addStroke(GestureDescription.StrokeDescription(path, 0, 100))
             .build()
         
-        dispatchGesture(gesture, null, null)
+        return dispatchGesture(gesture, null, null)
     }
     
     /**
-     * Permite a Ritsu escribir texto automáticamente
+     * Vuelve a la pantalla anterior
      */
-    fun typeText(text: String) {
-        val rootNode = rootInActiveWindow ?: return
-        val editText = findEditableNode(rootNode)
-        
-        editText?.let { node ->
-            val arguments = android.os.Bundle().apply {
-                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+    fun goBack(): Boolean {
+        return performGlobalAction(GLOBAL_ACTION_BACK)
+    }
+    
+    /**
+     * Va a la pantalla de inicio
+     */
+    fun goHome(): Boolean {
+        return performGlobalAction(GLOBAL_ACTION_HOME)
+    }
+    
+    /**
+     * Abre el menú de aplicaciones recientes
+     */
+    fun openRecents(): Boolean {
+        return performGlobalAction(GLOBAL_ACTION_RECENTS)
+    }
+    
+    /**
+     * Abre el panel de notificaciones
+     */
+    fun openNotifications(): Boolean {
+        return performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
+    }
+    
+    /**
+     * Abre los ajustes rápidos
+     */
+    fun openQuickSettings(): Boolean {
+        return performGlobalAction(GLOBAL_ACTION_QUICK_SETTINGS)
+    }
+    
+    /**
+     * Toma una captura de pantalla (requiere Android 10+)
+     */
+    @RequiresApi(Build.VERSION_CODES.P)
+    fun takeScreenshot() {
+        serviceScope.launch {
+            try {
+                takeScreenshot(
+                    AccessibilityService.TAKE_SCREENSHOT_DISPLAY,
+                    Dispatchers.IO.asExecutor()
+                ) { result ->
+                    if (result != null) {
+                        Log.d(TAG, "Captura de pantalla tomada con éxito")
+                        // Aquí se procesaría la captura
+                        result.bitmap.recycle()
+                    } else {
+                        Log.e(TAG, "Error al tomar captura de pantalla")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error al tomar captura de pantalla: ${e.message}")
             }
-            node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
         }
     }
     
-    private fun findEditableNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-        if (node.isEditable) {
+    // Métodos auxiliares para buscar nodos
+    
+    private fun findNodeByText(node: AccessibilityNodeInfo, text: String): AccessibilityNodeInfo? {
+        // Buscar en el nodo actual
+        if (node.text?.contains(text, ignoreCase = true) == true) {
             return node
         }
         
+        // Buscar en los hijos
         for (i in 0 until node.childCount) {
-            val child = node.getChild(i)
-            child?.let {
-                val result = findEditableNode(it)
-                if (result != null) return result
+            val child = node.getChild(i) ?: continue
+            val result = findNodeByText(child, text)
+            if (result != null) {
+                return result
             }
+            child.recycle()
         }
         
         return null
     }
     
-    /**
-     * Permite a Ritsu hacer scroll
-     */
-    fun performScroll(direction: ScrollDirection) {
-        val rootNode = rootInActiveWindow ?: return
-        
-        val action = when (direction) {
-            ScrollDirection.UP -> AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
-            ScrollDirection.DOWN -> AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
-            ScrollDirection.LEFT -> AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
-            ScrollDirection.RIGHT -> AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
-        }
-        
-        rootNode.performAction(action)
-    }
-    
-    /**
-     * Obtiene el texto visible en pantalla
-     */
-    fun getScreenText(): String {
-        val rootNode = rootInActiveWindow ?: return ""
-        return extractTextFromNode(rootNode)
-    }
-    
-    private fun extractTextFromNode(node: AccessibilityNodeInfo): String {
-        val text = StringBuilder()
-        
-        node.text?.let { text.append(it).append(" ") }
-        node.contentDescription?.let { text.append(it).append(" ") }
-        
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i)
-            child?.let {
-                text.append(extractTextFromNode(it))
+    private fun findNodeById(node: AccessibilityNodeInfo, viewId: String): AccessibilityNodeInfo? {
+        // Buscar por ID
+        val nodes = node.findAccessibilityNodeInfosByViewId(viewId)
+        if (nodes.isNotEmpty()) {
+            val result = nodes[0]
+            for (i in 1 until nodes.size) {
+                nodes[i].recycle()
             }
+            return result
         }
         
-        return text.toString()
+        // Buscar en los hijos
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val result = findNodeById(child, viewId)
+            if (result != null) {
+                return result
+            }
+            child.recycle()
+        }
+        
+        return null
     }
     
-    /**
-     * Permite a Ritsu navegar hacia atrás
-     */
-    fun goBack() {
-        performGlobalAction(GLOBAL_ACTION_BACK)
+    private fun findEditTextNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        // Verificar si el nodo actual es un campo de texto editable
+        if (node.isEditable) {
+            return node
+        }
+        
+        // Buscar en los hijos
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val result = findEditTextNode(child)
+            if (result != null) {
+                return result
+            }
+            child.recycle()
+        }
+        
+        return null
     }
     
-    /**
-     * Permite a Ritsu ir al home
-     */
-    fun goHome() {
-        performGlobalAction(GLOBAL_ACTION_HOME)
+    private fun performClickOnNode(node: AccessibilityNodeInfo): Boolean {
+        // Verificar si el nodo es clickeable
+        if (node.isClickable) {
+            return node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        }
+        
+        // Si no es clickeable, intentar con el padre
+        val parent = node.parent
+        return if (parent != null) {
+            val result = performClickOnNode(parent)
+            parent.recycle()
+            result
+        } else {
+            false
+        }
     }
     
-    /**
-     * Permite a Ritsu abrir aplicaciones recientes
-     */
-    fun openRecents() {
-        performGlobalAction(GLOBAL_ACTION_RECENTS)
+    // Enumeración para direcciones de desplazamiento
+    enum class ScrollDirection {
+        UP, DOWN, LEFT, RIGHT
     }
-    
-    override fun onDestroy() {
-        super.onDestroy()
-        instance = null
-        scope.cancel()
-        ritsuCore.cleanup()
-    }
-}
-
-enum class ScrollDirection {
-    UP, DOWN, LEFT, RIGHT
 }
 

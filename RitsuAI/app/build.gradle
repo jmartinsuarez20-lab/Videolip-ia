@@ -6,16 +6,23 @@ plugins {
 
 android {
     namespace 'com.ritsuai'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.ritsuai"
-        minSdk 26
-        targetSdk 33
+        minSdk 24
+        targetSdk 34
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Configuración de Room
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += ["room.schemaLocation": "$projectDir/schemas".toString()]
+            }
+        }
     }
 
     buildTypes {
@@ -26,55 +33,52 @@ android {
     }
     
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
     
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = '1.8'
     }
     
     buildFeatures {
         viewBinding true
-        dataBinding true
     }
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.10.1'
+    // Dependencias de Android
+    implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'com.google.android.material:material:1.10.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     
-    // Para el overlay flotante
-    implementation 'androidx.window:window:1.1.0'
+    // Corrutinas
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     
-    // Para animaciones avanzadas
-    implementation 'com.airbnb.android:lottie:6.0.0'
+    // Room para base de datos
+    implementation 'androidx.room:room-runtime:2.6.0'
+    implementation 'androidx.room:room-ktx:2.6.0'
+    kapt 'androidx.room:room-compiler:2.6.0'
     
-    // Para networking y IA
+    // Lifecycle
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.6.2'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
+    
+    // Glide para carga de imágenes
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    kapt 'com.github.bumptech.glide:compiler:4.16.0'
+    
+    // Retrofit para API
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.11.0'
     
-    // Para base de datos local
-    implementation 'androidx.room:room-runtime:2.5.0'
-    implementation 'androidx.room:room-ktx:2.5.0'
-    kapt 'androidx.room:room-compiler:2.5.0'
+    // Gson para JSON
+    implementation 'com.google.code.gson:gson:2.10.1'
     
-    // Para procesamiento de imágenes del avatar
-    implementation 'com.github.bumptech.glide:glide:4.15.1'
-    
-    // Para permisos
-    implementation 'com.karumi:dexter:6.2.3'
-    
-    // Para corrutinas
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1'
-    
-    // Para ViewModel y LiveData
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
-    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.6.1'
-    
+    // Pruebas
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
