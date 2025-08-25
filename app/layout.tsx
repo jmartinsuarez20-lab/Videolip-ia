@@ -1,8 +1,8 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'Videolip-ia',
-  description: 'Videolip-ia application',
+  title: 'Videolip-IA | Análisis de Video con Inteligencia Artificial',
+  description: 'Plataforma avanzada de análisis de video con IA. Analiza emociones, calidad de audio, sincronización labial y más.',
 }
 
 export default function RootLayout({
@@ -11,8 +11,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="es">
+      <body className="bg-gray-900 text-white">{children}</body>
     </html>
   )
 }
